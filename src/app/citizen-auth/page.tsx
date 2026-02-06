@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import { otpApi, ApiError } from '@/lib/api';
@@ -13,6 +13,7 @@ type Step = 'phone' | 'otp' | 'success';
 export default function CitizenAuthPage() {
   const { loginWithOtp, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -21,12 +22,17 @@ export default function CitizenAuthPage() {
   const [countdown, setCountdown] = useState(0);
   const otpInputRef = useRef<HTMLInputElement>(null);
 
+  // Get redirect URL from query params
+  const redirectUrl = searchParams.get('redirect') || '/citizen';
+  const fromGuest = searchParams.get('from') === 'guest';
+
   // Redirect if already logged in as citizen
   useEffect(() => {
     if (user?.role === 'citizen') {
-      router.push('/citizen');
+      // Use the redirect URL if provided, otherwise go to citizen dashboard
+      router.push(redirectUrl);
     }
-  }, [user, router]);
+  }, [user, router, redirectUrl]);
 
   // Countdown timer for resend
   useEffect(() => {
@@ -86,9 +92,14 @@ export default function CitizenAuthPage() {
       const res = await otpApi.verifyOtp({ phone: cleanPhone, code: otp });
       loginWithOtp(res);
       setStep('success');
-      // Redirect to citizen dashboard
+      // Redirect to the specified URL or citizen dashboard
       setTimeout(() => {
-        router.push('/citizen');
+        // If coming from guest request flow, add query param to indicate completion
+        if (fromGuest) {
+          router.push(`${redirectUrl}?from=guest`);
+        } else {
+          router.push(redirectUrl);
+        }
       }, 1500);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -143,9 +154,27 @@ export default function CitizenAuthPage() {
         {step === 'phone' && (
           <div>
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-neutral-dark">مرحبًا بك</h1>
-              <p className="text-gray-500 mt-2">أدخل رقم هاتفك للبدء - لا حاجة لتسجيل معقد</p>
+              <h1 className="text-2xl font-bold text-neutral-dark">
+                {fromGuest ? 'خطوة أخيرة!' : 'مرحبًا بك'}
+              </h1>
+              <p className="text-gray-500 mt-2">
+                {fromGuest 
+                  ? 'أدخل رقم هاتفك لإرسال طلبك - بيانات الطلب محفوظة'
+                  : 'أدخل رقم هاتفك للبدء - لا حاجة لتسجيل معقد'}
+              </p>
             </div>
+            
+            {/* Info banner for guest flow */}
+            {fromGuest && (
+              <div className="bg-accent-50 border border-accent-100 rounded-xl p-3 mb-4">
+                <div className="flex items-center gap-2 text-accent-700 text-sm">
+                  <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>بيانات طلبك محفوظة وستُرسل بعد التحقق</span>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <form onSubmit={handleSendOtp} className="space-y-5">
