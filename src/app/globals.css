@@ -2,20 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ✍️ الخطوط (Typography) لكرامة قصر - KKSAR.MA */
-/* 🔹 العربية (أساسي) - Cairo: واضح، رسمي، مناسب للويب والموبايل */
-/* 🔹 اللاتينية - Inter: نظيف، حديث، ممتاز للـ UI */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 body {
   font-family: 'Cairo', 'Inter', sans-serif;
+  color: #2B2B2B;
 }
 
-/* 🎯 متغيرات الألوان الرسمية */
 :root {
-  --color-primary: #1F4FD8;      /* أزرق هادئ إنساني */
-  --color-secondary: #2FA66A;    /* أخضر كرامة */
-  --color-dark: #2B2B2B;         /* نصوص */
-  --color-light: #F4F6F8;        /* خلفيات */
-  --color-danger: #D83A3A;       /* تنبيه واستعجال */
+  --color-primary: #1F4FD8;
+  --color-secondary: #2FA66A;
+  --color-dark: #2B2B2B;
+  --color-light: #F4F6F8;
+  --color-danger: #D83A3A;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom selection color */
+::selection {
+  background-color: rgba(31, 79, 216, 0.15);
+  color: #1F4FD8;
+}
+
+/* OTP Input styling */
+.otp-input {
+  letter-spacing: 0.5em;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Inter', monospace;
+}
+
+/* Fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in-up-delay-1 {
+  animation: fadeInUp 0.6s ease-out 0.1s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-2 {
+  animation: fadeInUp 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-3 {
+  animation: fadeInUp 0.6s ease-out 0.3s forwards;
+  opacity: 0;
 }

@@ -40,19 +40,25 @@ export default function TrackPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-light">
       <Navbar />
 
       <div className="max-w-xl mx-auto px-4 py-12">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">تتبع طلبك</h1>
-          <p className="text-gray-600 mt-2">أدخل رمز المتابعة ورقم الهاتف لمعرفة حالة طلبك</p>
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-50 rounded-2xl mb-4">
+            <svg className="w-7 h-7 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-neutral-dark">تتبع طلبك</h1>
+          <p className="text-gray-500 mt-2">أدخل رمز المتابعة ورقم الهاتف لمعرفة حالة طلبك</p>
         </div>
 
-        <Card>
+        <Card className="!rounded-2xl !border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg">
+              <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl">
                 {error}
               </div>
             )}
@@ -69,7 +75,7 @@ export default function TrackPage() {
             <Input
               label="رقم الهاتف"
               type="tel"
-              placeholder="+212600000000"
+              placeholder="06XXXXXXXX"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
@@ -83,7 +89,7 @@ export default function TrackPage() {
         </Card>
 
         {result && (
-          <Card className="mt-6">
+          <Card className="mt-6 !rounded-2xl !border-gray-100">
             <h2 className="text-lg font-semibold mb-4">حالة الطلب</h2>
 
             <div className="space-y-3">
@@ -107,7 +113,7 @@ export default function TrackPage() {
               {result.organization_name && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">المؤسسة المتكفلة</span>
-                  <span className="font-medium text-green-700">{result.organization_name}</span>
+                  <span className="font-medium text-accent-500">{result.organization_name}</span>
                 </div>
               )}
 
@@ -120,7 +126,7 @@ export default function TrackPage() {
             </div>
 
             {/* Status timeline */}
-            <div className="mt-6 pt-4 border-t">
+            <div className="mt-6 pt-4 border-t border-gray-100">
               <h3 className="text-sm font-medium text-gray-700 mb-3">مراحل الطلب</h3>
               <div className="flex items-center justify-between text-xs">
                 {(['new', 'assigned', 'in_progress', 'completed'] as RequestStatus[]).map((s, i) => {
@@ -131,15 +137,15 @@ export default function TrackPage() {
                   return (
                     <div key={s} className="flex flex-col items-center flex-1">
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                           isPast
                             ? 'bg-primary-600 text-white'
                             : 'bg-gray-200 text-gray-400'
-                        } ${isActive ? 'ring-2 ring-primary-300' : ''}`}
+                        } ${isActive ? 'ring-2 ring-primary-200 ring-offset-2' : ''}`}
                       >
                         {i + 1}
                       </div>
-                      <span className={`mt-1 ${isPast ? 'text-primary-600 font-medium' : 'text-gray-400'}`}>
+                      <span className={`mt-1.5 ${isPast ? 'text-primary-600 font-medium' : 'text-gray-400'}`}>
                         {REQUEST_STATUS_LABELS[s]}
                       </span>
                     </div>
@@ -150,13 +156,17 @@ export default function TrackPage() {
           </Card>
         )}
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          ليس لديك رمز متابعة؟{' '}
-          <Link href="/login" className="text-primary-600 hover:text-primary-700">
-            سجّل الدخول
-          </Link>{' '}
-          لعرض طلباتك
-        </p>
+        <div className="text-center mt-8 space-y-3">
+          <p className="text-sm text-gray-500">
+            ليس لديك رمز متابعة؟
+          </p>
+          <Link
+            href="/citizen-auth"
+            className="inline-block text-sm text-primary-600 hover:text-primary-700 font-medium"
+          >
+            قدّم طلبًا جديدًا عبر رقم هاتفك
+          </Link>
+        </div>
       </div>
     </div>
   );

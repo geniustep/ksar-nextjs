@@ -30,6 +30,11 @@ import type {
   RequestStatus,
   RequestCategory,
   AssignmentStatus,
+  OtpSendRequest,
+  OtpSendResponse,
+  OtpVerifyRequest,
+  OtpVerifyResponse,
+  PhoneRequestsResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ksar.geniura.com';
@@ -118,6 +123,28 @@ export const authApi = {
     return request('/api/v1/auth/refresh', {
       method: 'POST',
     });
+  },
+};
+
+// === OTP Auth API (Citizens) ===
+
+export const otpApi = {
+  sendOtp(data: OtpSendRequest): Promise<OtpSendResponse> {
+    return request('/api/v1/auth/otp/send', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  verifyOtp(data: OtpVerifyRequest): Promise<OtpVerifyResponse> {
+    return request('/api/v1/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getRequestsByPhone(phone: string): Promise<PhoneRequestsResponse> {
+    return request(`/api/v1/citizen/requests/by-phone?phone=${encodeURIComponent(phone)}`);
   },
 };
 

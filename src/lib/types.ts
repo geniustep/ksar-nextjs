@@ -36,6 +36,34 @@ export interface RegisterRequest {
   region?: string;
 }
 
+// === OTP Auth (Citizens) ===
+
+export interface OtpSendRequest {
+  phone: string;
+}
+
+export interface OtpSendResponse {
+  message: string;
+  expires_in: number;
+}
+
+export interface OtpVerifyRequest {
+  phone: string;
+  code: string;
+}
+
+export interface OtpVerifyResponse {
+  access_token: string;
+  token_type: string;
+  user: UserResponse;
+  is_new_user: boolean;
+}
+
+export interface PhoneRequestsResponse {
+  requests: CitizenRequestResponse[];
+  total: number;
+}
+
 export interface UserResponse {
   id: string;
   email: string;

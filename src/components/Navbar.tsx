@@ -31,7 +31,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-8">
@@ -39,21 +39,24 @@ export default function Navbar() {
               <Image
                 src="/logo.png"
                 alt="كرامة قصر"
-                width={70}
-                height={70}
+                width={50}
+                height={50}
                 className="object-contain"
               />
-              {/* <div className="flex flex-col">
-                <span className="text-lg font-bold text-primary-600 font-cairo">كرامة قصر</span>
-                <span className="text-xs text-accent-500 font-inter tracking-wider">KKSAR.MA</span>
-              </div> */}
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-primary-600 font-cairo leading-tight">كرامة قصر</span>
+                <span className="text-[10px] text-accent-500 font-inter tracking-widest">KKSAR.MA</span>
+              </div>
             </Link>
 
-            <div className="hidden md:flex items-center gap-4">
-              <Link href="/" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/" className="text-sm text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-primary-50">
                 الرئيسية
               </Link>
-              <Link href="/track" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">
+              <Link href="/about" className="text-sm text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-primary-50">
+                من نحن
+              </Link>
+              <Link href="/track" className="text-sm text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-primary-50">
                 تتبع طلب
               </Link>
             </div>
@@ -64,15 +67,15 @@ export default function Navbar() {
               <>
                 <Link
                   href={getDashboardLink()}
-                  className="text-sm text-gray-600 hover:text-primary-600 transition-colors"
+                  className="text-sm text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-primary-50"
                 >
                   لوحة التحكم
                 </Link>
-                <span className="text-sm text-gray-400">|</span>
+                <span className="text-sm text-gray-300">|</span>
                 <span className="text-sm text-gray-600">{user.full_name}</span>
                 <button
                   onClick={handleLogout}
-                  className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                  className="text-sm text-danger-500 hover:text-danger-600 transition-colors"
                 >
                   خروج
                 </button>
@@ -81,15 +84,15 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="text-sm px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  className="text-sm px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors font-medium"
                 >
                   دخول
                 </Link>
                 <Link
-                  href="/register"
-                  className="text-sm px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  href="/citizen-auth"
+                  className="text-sm px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
                 >
-                  تسجيل
+                  طلب مساعدة
                 </Link>
               </>
             )}
@@ -99,7 +102,7 @@ export default function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-gray-900 p-2"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {menuOpen ? (
@@ -115,30 +118,33 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white">
-          <div className="px-4 py-3 space-y-2">
-            <Link href="/" className="block text-sm text-gray-600 py-2" onClick={() => setMenuOpen(false)}>
+        <div className="md:hidden border-t border-gray-100 bg-white">
+          <div className="px-4 py-3 space-y-1">
+            <Link href="/" className="block text-sm text-gray-600 py-2.5 px-3 rounded-lg hover:bg-primary-50" onClick={() => setMenuOpen(false)}>
               الرئيسية
             </Link>
-            <Link href="/track" className="block text-sm text-gray-600 py-2" onClick={() => setMenuOpen(false)}>
+            <Link href="/about" className="block text-sm text-gray-600 py-2.5 px-3 rounded-lg hover:bg-primary-50" onClick={() => setMenuOpen(false)}>
+              من نحن
+            </Link>
+            <Link href="/track" className="block text-sm text-gray-600 py-2.5 px-3 rounded-lg hover:bg-primary-50" onClick={() => setMenuOpen(false)}>
               تتبع طلب
             </Link>
             {isAuthenticated && user ? (
               <>
-                <Link href={getDashboardLink()} className="block text-sm text-gray-600 py-2" onClick={() => setMenuOpen(false)}>
+                <Link href={getDashboardLink()} className="block text-sm text-gray-600 py-2.5 px-3 rounded-lg hover:bg-primary-50" onClick={() => setMenuOpen(false)}>
                   لوحة التحكم
                 </Link>
-                <button onClick={handleLogout} className="block text-sm text-red-600 py-2">
+                <button onClick={handleLogout} className="block text-sm text-danger-500 py-2.5 px-3 rounded-lg hover:bg-red-50 w-full text-right">
                   خروج
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login" className="block text-sm text-primary-600 py-2" onClick={() => setMenuOpen(false)}>
+                <Link href="/login" className="block text-sm text-primary-600 py-2.5 px-3 rounded-lg hover:bg-primary-50 font-medium" onClick={() => setMenuOpen(false)}>
                   دخول
                 </Link>
-                <Link href="/register" className="block text-sm text-primary-600 py-2" onClick={() => setMenuOpen(false)}>
-                  تسجيل
+                <Link href="/citizen-auth" className="block text-sm bg-primary-600 text-white py-2.5 px-3 rounded-lg text-center font-medium" onClick={() => setMenuOpen(false)}>
+                  طلب مساعدة
                 </Link>
               </>
             )}

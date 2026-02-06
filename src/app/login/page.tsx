@@ -55,28 +55,28 @@ export default function LoginPage() {
   }, [user, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-neutral-light flex flex-col items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-2">
             <Image
               src="/logo.png"
               alt="كرامة قصر"
-              width={80}
-              height={80}
+              width={70}
+              height={70}
               className="object-contain"
             />
-            {/* <span className="text-2xl font-bold text-primary-600 font-cairo">كرامة قصر</span>
-            <span className="text-sm text-accent-500 font-inter tracking-wider">KKSAR.MA</span> */}
+            <span className="text-2xl font-bold text-primary-600 font-cairo">كرامة قصر</span>
+            <span className="text-xs text-accent-500 font-inter tracking-wider">KKSAR.MA</span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-4">تسجيل الدخول</h1>
-          <p className="text-gray-600 mt-2">أدخل بياناتك للوصول إلى حسابك</p>
+          <h1 className="text-2xl font-bold text-neutral-dark mt-6">تسجيل الدخول</h1>
+          <p className="text-gray-500 mt-2">أدخل بياناتك للوصول إلى حسابك</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg">
+              <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl">
                 {error}
               </div>
             )}
@@ -106,18 +106,23 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
-            ليس لديك حساب؟{' '}
-            <Link href="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-              سجّل الآن
+          <div className="mt-6 pt-5 border-t border-gray-100 space-y-3 text-center">
+            <p className="text-sm text-gray-500">
+              مواطن يريد تقديم طلب؟
+            </p>
+            <Link
+              href="/citizen-auth"
+              className="block text-sm text-accent-500 hover:text-accent-600 font-semibold"
+            >
+              ادخل برقم هاتفك مباشرة
             </Link>
-          </p>
+          </div>
         </div>
 
         {/* Demo accounts */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm">
-          <p className="font-medium text-blue-800 mb-2">حسابات تجريبية:</p>
-          <div className="space-y-1 text-blue-700">
+        <div className="mt-6 bg-primary-50 border border-primary-100 rounded-2xl p-4 text-sm">
+          <p className="font-medium text-primary-800 mb-2">حسابات تجريبية:</p>
+          <div className="space-y-1 text-primary-700">
             <p>المدير: admin@ksar.ma / admin123</p>
             <p>المؤسسة: org@ksar.ma / org123</p>
             <p>المواطن: citizen@example.ma / citizen123</p>
