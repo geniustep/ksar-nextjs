@@ -89,7 +89,7 @@ export default function Navbar() {
                   دخول
                 </Link>
                 <Link
-                  href="/citizen-auth"
+                  href="/citizen/new-request"
                   className="text-sm px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
                 >
                   طلب مساعدة
@@ -143,7 +143,7 @@ export default function Navbar() {
                 <Link href="/login" className="block text-sm text-primary-600 py-2.5 px-3 rounded-lg hover:bg-primary-50 font-medium" onClick={() => setMenuOpen(false)}>
                   دخول
                 </Link>
-                <Link href="/citizen-auth" className="block text-sm bg-primary-600 text-white py-2.5 px-3 rounded-lg text-center font-medium" onClick={() => setMenuOpen(false)}>
+                <Link href="/citizen/new-request" className="block text-sm bg-primary-600 text-white py-2.5 px-3 rounded-lg text-center font-medium" onClick={() => setMenuOpen(false)}>
                   طلب مساعدة
                 </Link>
               </>

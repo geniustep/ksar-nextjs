@@ -64,6 +64,20 @@ export interface PhoneRequestsResponse {
   total: number;
 }
 
+// Phone Registration (Temporary - without OTP)
+export interface PhoneRegisterRequest {
+  phone: string;
+  full_name?: string;
+}
+
+export interface PhoneRegisterResponse {
+  message: string;
+  user: UserResponse;
+  access_token: string;
+  token_type: string;
+  is_new_user: boolean;
+}
+
 export interface UserResponse {
   id: string;
   email: string;
@@ -110,7 +124,7 @@ export interface ChangePasswordRequest {
 
 export interface CitizenRequestCreate {
   category: RequestCategory;
-  description: string;
+  description?: string;
   quantity: number;
   family_members: number;
   address?: string;
@@ -118,6 +132,8 @@ export interface CitizenRequestCreate {
   region?: string;
   latitude?: number;
   longitude?: number;
+  audio_url?: string;
+  images?: string[];
   is_urgent: boolean;
 }
 
@@ -128,6 +144,8 @@ export interface CitizenRequestUpdate {
   address?: string;
   city?: string;
   region?: string;
+  audio_url?: string;
+  images?: string[];
   is_urgent?: boolean;
 }
 
@@ -156,12 +174,16 @@ export interface CitizenRequestResponse {
   id: string;
   tracking_code: string;
   category: RequestCategory;
-  description: string;
+  description: string | null;
   quantity: number;
   family_members: number;
-  address: string;
+  address: string | null;
   city: string | null;
   region: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  audio_url: string | null;
+  images: string[] | null;
   status: RequestStatus;
   status_ar: string;
   is_urgent: boolean;

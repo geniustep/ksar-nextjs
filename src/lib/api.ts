@@ -35,6 +35,8 @@ import type {
   OtpVerifyRequest,
   OtpVerifyResponse,
   PhoneRequestsResponse,
+  PhoneRegisterRequest,
+  PhoneRegisterResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ksar.geniura.com';
@@ -145,6 +147,14 @@ export const otpApi = {
 
   getRequestsByPhone(phone: string): Promise<PhoneRequestsResponse> {
     return request(`/api/v1/citizen/requests/by-phone?phone=${encodeURIComponent(phone)}`);
+  },
+
+  // Temporary phone registration without OTP
+  phoneRegister(data: PhoneRegisterRequest): Promise<PhoneRegisterResponse> {
+    return request('/api/v1/auth/phone-register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };
 

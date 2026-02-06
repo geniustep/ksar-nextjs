@@ -7,7 +7,7 @@ import Image from 'next/image';
 import DashboardLayout from '@/components/DashboardLayout';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { citizenApi, ApiError } from '@/lib/api';
+import { citizenApi, otpApi, ApiError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/lib/constants';
 import type { RequestCategory } from '@/lib/types';
@@ -15,6 +15,26 @@ import type { RequestCategory } from '@/lib/types';
 // Storage key for pending request (for guest flow)
 const PENDING_REQUEST_KEY = 'pending_request_data';
 
+// Steps for authenticated users (5 steps)
+const STEPS_AUTH = [
+  { id: 1, title: 'نوع المساعدة', icon: '📋' },
+  { id: 2, title: 'تفاصيل الطلب', icon: '✏️' },
+  { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 4, title: 'الموقع', icon: '📍' },
+  { id: 5, title: 'مراجعة وإرسال', icon: '✅' },
+];
+
+// Steps for guest users (6 steps - includes phone registration)
+const STEPS_GUEST = [
+  { id: 1, title: 'نوع المساعدة', icon: '📋' },
+  { id: 2, title: 'تفاصيل الطلب', icon: '✏️' },
+  { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 4, title: 'الموقع', icon: '📍' },
+  { id: 5, title: 'مراجعة', icon: '✅' },
+  { id: 6, title: 'رقم الهاتف', icon: '📱' },
+];
+
+// Legacy - for backward compatibility
 const STEPS = [
   { id: 1, title: 'نوع المساعدة', icon: '📋' },
   { id: 2, title: 'تفاصيل الطلب', icon: '✏️' },
@@ -79,6 +99,10 @@ export default function NewRequestPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{ tracking_code: string; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  
+  // Phone registration state (for guest flow)
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [registerLoading, setRegisterLoading] = useState(false);
   const [autoSubmitting, setAutoSubmitting] = useState(false);
 
   // Voice recording state
@@ -94,6 +118,11 @@ export default function NewRequestPage() {
   // GPS state
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState('');
+
+  // Image state
+  const [images, setImages] = useState<{ file: File; url: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Cleanup audio URL on unmount
   useEffect(() => {
@@ -268,7 +297,7 @@ export default function NewRequestPage() {
     }
   }, [audioBlob]);
 
-  // ====== GPS Location ======
+  // ====== GPS Location with Reverse Geocoding ======
   const getLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setGpsError('⚠️ المتصفح لا يدعم تحديد الموقع');
@@ -277,12 +306,37 @@ export default function NewRequestPage() {
     setGpsLoading(true);
     setGpsError('');
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
         setForm((prev) => ({
           ...prev,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+          latitude: lat,
+          longitude: lng,
         }));
+
+        // Reverse Geocoding using Nominatim (OpenStreetMap)
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`
+          );
+          const data = await response.json();
+          
+          if (data && data.address) {
+            const addr = data.address;
+            setForm((prev) => ({
+              ...prev,
+              city: addr.city || addr.town || addr.village || addr.municipality || prev.city,
+              region: addr.suburb || addr.neighbourhood || addr.district || addr.quarter || prev.region,
+              address: data.display_name?.split(',').slice(0, 3).join('،') || prev.address,
+            }));
+          }
+        } catch {
+          // Silently fail - coordinates are still saved
+          console.log('Reverse geocoding failed, but coordinates saved');
+        }
+        
         setGpsLoading(false);
       },
       (err) => {
@@ -305,27 +359,103 @@ export default function NewRequestPage() {
     );
   }, []);
 
+  // ====== Image Handling ======
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImages: { file: File; url: string }[] = [];
+    for (let i = 0; i < files.length && images.length + newImages.length < 5; i++) {
+      const file = files[i];
+      if (file.type.startsWith('image/')) {
+        newImages.push({
+          file,
+          url: URL.createObjectURL(file),
+        });
+      }
+    }
+    setImages((prev) => [...prev, ...newImages]);
+    // Reset input
+    if (e.target) e.target.value = '';
+  }, [images.length]);
+
+  const removeImage = useCallback((index: number) => {
+    setImages((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.url);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
+  // Cleanup image URLs on unmount
+  useEffect(() => {
+    return () => {
+      images.forEach((img) => URL.revokeObjectURL(img.url));
+    };
+  }, []);
+
   // ====== Form Submit ======
+  // Handle phone registration and submit for guests
+  const handlePhoneRegisterAndSubmit = async () => {
+    if (!phoneNumber || phoneNumber.length < 10) {
+      setError('⚠️ يرجى إدخال رقم هاتف صحيح');
+      return;
+    }
+
+    setError('');
+    setRegisterLoading(true);
+
+    try {
+      // Step 1: Register with phone number
+      const registerResult = await otpApi.phoneRegister({
+        phone: phoneNumber,
+        full_name: undefined, // Optional
+      });
+
+      // Step 2: Save the token
+      localStorage.setItem('access_token', registerResult.access_token);
+
+      // Step 3: Submit the request
+      const result = await citizenApi.createRequest({
+        category: form.category as RequestCategory,
+        description: form.description || undefined,
+        quantity: parseInt(form.quantity) || 1,
+        family_members: parseInt(form.family_members) || 1,
+        address: form.address || undefined,
+        city: form.city || undefined,
+        region: form.region || undefined,
+        latitude: form.latitude ?? undefined,
+        longitude: form.longitude ?? undefined,
+        is_urgent: form.is_urgent,
+      });
+
+      setSuccess({
+        tracking_code: result.tracking_code,
+        message: result.message,
+      });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.detail);
+      } else {
+        setError('⚠️ خطأ في الاتصال بالخادم. تحقق من اتصال الإنترنت وحاول مجدداً.');
+      }
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.category) {
       setError('⚠️ يرجى اختيار نوع المساعدة أولاً');
       setStep(1);
       return;
     }
-    if (!form.description || form.description.length < 10) {
-      setError('⚠️ يرجى كتابة وصف للطلب (10 أحرف على الأقل)');
-      setStep(2);
-      return;
-    }
+    // Description is now optional - only validate if provided
+    // No validation for description anymore
 
-    // If not authenticated, save to sessionStorage and redirect to auth
+    // If not authenticated, go to step 6 for phone registration
     if (!isAuthenticated) {
-      const dataToSave = {
-        ...form,
-        timestamp: Date.now(),
-      };
-      sessionStorage.setItem(PENDING_REQUEST_KEY, JSON.stringify(dataToSave));
-      router.push('/citizen-auth?redirect=/citizen/new-request&from=guest');
+      setStep(6);
       return;
     }
 
@@ -381,91 +511,124 @@ export default function NewRequestPage() {
 
   // ====== Success Screen ======
   if (success) {
-    return (
-      <DashboardLayout>
-        <div className="max-w-lg mx-auto py-8 px-4">
-          <div className="bg-white rounded-2xl shadow-lg border border-green-100 overflow-hidden">
-            {/* Success header */}
-            <div className="bg-gradient-to-l from-green-500 to-emerald-600 p-8 text-center">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-5xl">🎉</span>
+    const successContent = (
+      <div className="max-w-lg mx-auto py-8 px-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-green-100 overflow-hidden">
+          {/* Success header */}
+          <div className="bg-gradient-to-l from-green-500 to-emerald-600 p-8 text-center">
+            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-5xl">🎉</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-1">تم إرسال طلبك بنجاح!</h2>
+            <p className="text-green-100 text-sm">{success.message}</p>
+          </div>
+
+          {/* Tracking code */}
+          <div className="p-6">
+            <div className="bg-gradient-to-l from-blue-50 to-indigo-50 rounded-xl p-5 mb-5 border border-blue-100">
+              <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
+                <span>🔑</span> رمز المتابعة الخاص بك
+              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-3xl font-mono font-bold text-primary-600 flex-1 tracking-wider">
+                  {success.tracking_code}
+                </p>
+                <button
+                  onClick={copyTrackingCode}
+                  className="shrink-0 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  {copied ? (
+                    <>
+                      <span>✅</span> تم النسخ
+                    </>
+                  ) : (
+                    <>
+                      <span>📋</span> نسخ
+                    </>
+                  )}
+                </button>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-1">تم إرسال طلبك بنجاح!</h2>
-              <p className="text-green-100 text-sm">{success.message}</p>
             </div>
 
-            {/* Tracking code */}
-            <div className="p-6">
-              <div className="bg-gradient-to-l from-blue-50 to-indigo-50 rounded-xl p-5 mb-5 border border-blue-100">
-                <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
-                  <span>🔑</span> رمز المتابعة الخاص بك
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+              <span className="text-2xl shrink-0">💡</span>
+              <div>
+                <p className="text-sm font-medium text-amber-800">مهم! احتفظ برمز المتابعة</p>
+                <p className="text-xs text-amber-600 mt-1">
+                  ستحتاج هذا الرمز لمتابعة حالة طلبك. التقط صورة للشاشة أو اكتبه في مكان آمن.
                 </p>
-                <div className="flex items-center gap-3">
-                  <p className="text-3xl font-mono font-bold text-primary-600 flex-1 tracking-wider">
-                    {success.tracking_code}
-                  </p>
-                  <button
-                    onClick={copyTrackingCode}
-                    className="shrink-0 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                  >
-                    {copied ? (
-                      <>
-                        <span>✅</span> تم النسخ
-                      </>
-                    ) : (
-                      <>
-                        <span>📋</span> نسخ
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
+            </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-                <span className="text-2xl shrink-0">💡</span>
-                <div>
-                  <p className="text-sm font-medium text-amber-800">مهم! احتفظ برمز المتابعة</p>
-                  <p className="text-xs text-amber-600 mt-1">
-                    ستحتاج هذا الرمز لمتابعة حالة طلبك. التقط صورة للشاشة أو اكتبه في مكان آمن.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <Button
-                  onClick={() => router.push('/citizen')}
-                  className="w-full text-base py-3"
-                  size="lg"
-                >
-                  🏠 العودة لطلباتي
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => {
-                    setSuccess(null);
-                    setStep(1);
-                    setForm({
-                      category: '',
-                      description: '',
-                      quantity: '1',
-                      family_members: '1',
-                      address: '',
-                      city: '',
-                      region: '',
-                      latitude: null,
-                      longitude: null,
-                      is_urgent: false,
-                    });
-                    deleteRecording();
-                  }}
-                >
-                  ➕ تقديم طلب جديد
-                </Button>
-              </div>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => router.push('/citizen')}
+                className="w-full text-base py-3"
+                size="lg"
+              >
+                🏠 العودة لطلباتي
+              </Button>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => {
+                  setSuccess(null);
+                  setStep(1);
+                  setPhoneNumber('');
+                  setForm({
+                    category: '',
+                    description: '',
+                    quantity: '1',
+                    family_members: '1',
+                    address: '',
+                    city: '',
+                    region: '',
+                    latitude: null,
+                    longitude: null,
+                    is_urgent: false,
+                  });
+                  deleteRecording();
+                }}
+              >
+                ➕ تقديم طلب جديد
+              </Button>
             </div>
           </div>
         </div>
+      </div>
+    );
+
+    // If user just registered (step 6), show success without DashboardLayout
+    if (step === 6) {
+      return (
+        <div className="min-h-screen bg-neutral-light">
+          {/* Simple header for new users */}
+          <div className="bg-gradient-to-bl from-primary-600 via-primary-700 to-primary-950 py-6 px-4">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex items-center gap-3">
+                <Image
+                  src="/logo.png"
+                  alt="كرامة قصر"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
+                <div>
+                  <h1 className="text-xl font-bold text-white">كرامة قصر</h1>
+                  <p className="text-primary-200 text-xs">KKSAR.MA</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {successContent}
+        </div>
+      );
+    }
+
+    // For authenticated users, use DashboardLayout
+    return (
+      <DashboardLayout>
+        {successContent}
       </DashboardLayout>
     );
   }
@@ -476,17 +639,25 @@ export default function NewRequestPage() {
       case 1:
         return form.category !== '';
       case 2:
-        return form.description.length >= 10;
+        // Description is optional now - can always proceed
+        return true;
       case 3:
         return true;
       case 4:
         return true;
       case 5:
         return true;
+      case 6:
+        // Phone number required for guest registration
+        return phoneNumber.length >= 10;
       default:
         return false;
     }
   };
+
+  // Get the correct steps based on authentication status
+  const currentSteps = isAuthenticated ? STEPS_AUTH : STEPS_GUEST;
+  const totalSteps = currentSteps.length;
 
   const nextStep = () => {
     if (step < 5 && canGoNext()) {
@@ -575,10 +746,10 @@ export default function NewRequestPage() {
               <div className="absolute top-5 right-5 left-5 h-1 bg-gray-200 rounded-full -z-0" />
               <div
                 className="absolute top-5 right-5 h-1 bg-gradient-to-l from-primary-500 to-accent-500 rounded-full -z-0 transition-all duration-500"
-                style={{ width: `${((step - 1) / (STEPS.length - 1)) * (100 - 5)}%` }}
+                style={{ width: `${((step - 1) / (STEPS_GUEST.length - 1)) * (100 - 5)}%` }}
               />
 
-              {STEPS.map((s) => (
+              {STEPS_GUEST.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => {
@@ -712,28 +883,155 @@ export default function NewRequestPage() {
                 <div className="text-center mb-6">
                   <span className="text-4xl mb-2 block">✏️</span>
                   <h2 className="text-xl font-bold text-gray-900">صف احتياجك</h2>
-                  <p className="text-gray-500 text-sm mt-1">اكتب ما تحتاجه بالتفصيل</p>
+                  <p className="text-gray-500 text-sm mt-1">يمكنك الكتابة أو التسجيل صوتياً أو إضافة صور</p>
                 </div>
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
-                    <span>📝</span> وصف الاحتياج
+                    <span>📝</span> وصف الاحتياج <span className="text-gray-400 font-normal">(اختياري)</span>
                   </label>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="مثال: نحتاج مواد غذائية أساسية (أرز، زيت، سكر) لعائلة مكونة من 5 أشخاص..."
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400 min-h-[120px] resize-y"
-                    rows={5}
-                    minLength={10}
-                    required
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400 min-h-[100px] resize-y"
+                    rows={4}
                   />
-                  <div className="flex items-center justify-between mt-1.5">
-                    <p className="text-xs text-gray-400">10 أحرف على الأقل</p>
-                    <p className={`text-xs ${form.description.length >= 10 ? 'text-green-500' : 'text-gray-400'}`}>
-                      {form.description.length >= 10 ? '✅' : '⬜'} {form.description.length} حرف
-                    </p>
-                  </div>
+                </div>
+
+                {/* Voice Recording Section */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                    <span>🎤</span> تسجيل صوتي <span className="text-gray-400 font-normal">(اختياري)</span>
+                  </label>
+                  
+                  {!audioBlob ? (
+                    <div className="flex flex-col items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      {isRecording ? (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                            <span className="text-lg font-mono text-red-600">{formatTime(recordingTime)}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={stopRecording}
+                            className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors shadow-md"
+                          >
+                            <span className="text-xl">⏹️</span>
+                            <span className="font-medium">إيقاف التسجيل</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={startRecording}
+                          className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shadow-md"
+                        >
+                          <span className="text-xl">🎤</span>
+                          <span className="font-medium">ابدأ التسجيل</span>
+                        </button>
+                      )}
+                      <p className="text-xs text-gray-500">اضغط لتسجيل رسالة صوتية</p>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-2xl">✅</span>
+                        <span className="text-green-700 font-medium">تم تسجيل رسالة صوتية</span>
+                      </div>
+                      {audioUrl && (
+                        <audio src={audioUrl} controls className="w-full mb-3" />
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={transcribeAudio}
+                          disabled={isTranscribing}
+                          className="flex-1 px-4 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors text-sm font-medium disabled:opacity-50"
+                        >
+                          {isTranscribing ? 'جاري الإضافة...' : '📝 إضافة للوصف'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={deleteRecording}
+                          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                        >
+                          🗑️ حذف
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Image Upload Section */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                    <span>📷</span> صور <span className="text-gray-400 font-normal">(اختياري - حد أقصى 5 صور)</span>
+                  </label>
+                  
+                  {/* Hidden file inputs */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+
+                  {/* Image preview grid */}
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                      {images.map((img, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                          <img
+                            src={img.url}
+                            alt={`صورة ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload buttons */}
+                  {images.length < 5 && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700"
+                      >
+                        <span className="text-xl">📸</span>
+                        <span>أخذ صورة</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700"
+                      >
+                        <span className="text-xl">🖼️</span>
+                        <span>تحميل صور</span>
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2 text-center">يمكنك إضافة صور توضح احتياجك</p>
                 </div>
               </div>
             )}
@@ -922,7 +1220,7 @@ export default function NewRequestPage() {
                 <div className="text-center mb-6">
                   <span className="text-4xl mb-2 block">✅</span>
                   <h2 className="text-xl font-bold text-gray-900">مراجعة الطلب</h2>
-                  <p className="text-gray-500 text-sm mt-1">تأكد من صحة المعلومات قبل الإرسال</p>
+                  <p className="text-gray-500 text-sm mt-1">تأكد من صحة المعلومات قبل المتابعة</p>
                 </div>
 
                 <div className="space-y-3">
@@ -968,6 +1266,56 @@ export default function NewRequestPage() {
               </div>
             )}
 
+            {/* Step 6 - Phone Registration (Guest only) */}
+            {step === 6 && (
+              <div>
+                <div className="text-center mb-6">
+                  <span className="text-4xl mb-2 block">📱</span>
+                  <h2 className="text-xl font-bold text-gray-900">أدخل رقم هاتفك</h2>
+                  <p className="text-gray-500 text-sm mt-1">لإرسال طلبك والحصول على رمز المتابعة</p>
+                </div>
+
+                <div className="bg-gradient-to-l from-primary-50 to-blue-50 rounded-xl p-5 border border-primary-100 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+                      <span className="text-xl">🔒</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-primary-700 mb-1">تسجيل آمن وسريع</h3>
+                      <p className="text-sm text-primary-600">
+                        رقم هاتفك هو معرّفك الوحيد. لن نشاركه مع أي جهة.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                    <span>📞</span> رقم الهاتف
+                  </label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
+                    placeholder="مثال: 0612345678"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-4 text-lg text-center shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400 font-mono tracking-wider"
+                    dir="ltr"
+                    maxLength={15}
+                  />
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    أدخل رقم هاتفك بدون رمز الدولة أو مع رمز الدولة (+212)
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-4 rounded-xl mb-4 flex items-center gap-2">
+                    <span className="text-lg">❌</span>
+                    <span>{error}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex gap-3 mt-8 pt-5 border-t border-gray-100">
               {step > 1 && (
@@ -986,15 +1334,25 @@ export default function NewRequestPage() {
                 >
                   التالي ←
                 </Button>
+              ) : step === 5 ? (
+                <Button
+                  type="button"
+                  onClick={() => setStep(6)}
+                  className="flex-1 !bg-gradient-to-l from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 !shadow-lg"
+                  size="lg"
+                >
+                  التالي - رقم الهاتف ←
+                </Button>
               ) : (
                 <Button
                   type="button"
-                  onClick={handleSubmit}
-                  loading={loading}
+                  onClick={handlePhoneRegisterAndSubmit}
+                  loading={registerLoading}
+                  disabled={!canGoNext()}
                   className="flex-1 !bg-gradient-to-l from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 !shadow-lg"
                   size="lg"
                 >
-                  🤲 المتابعة للتسجيل
+                  🤲 إرسال الطلب
                 </Button>
               )}
             </div>
@@ -1173,45 +1531,33 @@ export default function NewRequestPage() {
             </div>
           )}
 
-          {/* ===== Step 2: Description & Voice ===== */}
+          {/* ===== Step 2: Description, Voice & Images ===== */}
           {step === 2 && (
             <div>
               <div className="text-center mb-6">
                 <span className="text-4xl mb-2 block">✏️</span>
                 <h2 className="text-xl font-bold text-gray-900">صف احتياجك</h2>
-                <p className="text-gray-500 text-sm mt-1">اكتب أو سجّل صوتياً ما تحتاجه بالتفصيل</p>
+                <p className="text-gray-500 text-sm mt-1">يمكنك الكتابة أو التسجيل صوتياً أو إضافة صور</p>
               </div>
 
               {/* Text description */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
-                  <span>📝</span> وصف الاحتياج
+                  <span>📝</span> وصف الاحتياج <span className="text-gray-400 font-normal">(اختياري)</span>
                 </label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="مثال: نحتاج مواد غذائية أساسية (أرز، زيت، سكر) لعائلة مكونة من 5 أشخاص..."
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400 min-h-[120px] resize-y"
-                  rows={5}
-                  minLength={10}
-                  required
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400 min-h-[100px] resize-y"
+                  rows={4}
                 />
-                <div className="flex items-center justify-between mt-1.5">
-                  <p className="text-xs text-gray-400">10 أحرف على الأقل</p>
-                  <p
-                    className={`text-xs ${
-                      form.description.length >= 10 ? 'text-green-500' : 'text-gray-400'
-                    }`}
-                  >
-                    {form.description.length >= 10 ? '✅' : '⬜'} {form.description.length} حرف
-                  </p>
-                </div>
               </div>
 
               {/* Voice Recording */}
-              <div className="bg-gradient-to-l from-violet-50 to-purple-50 rounded-xl p-5 border border-violet-100">
+              <div className="bg-gradient-to-l from-violet-50 to-purple-50 rounded-xl p-5 border border-violet-100 mb-4">
                 <p className="text-sm font-medium text-violet-800 mb-3 flex items-center gap-2">
-                  <span className="text-xl">🎙️</span> أو سجّل رسالة صوتية
+                  <span className="text-xl">🎙️</span> تسجيل صوتي <span className="text-violet-500 font-normal">(اختياري)</span>
                 </p>
 
                 {!audioUrl ? (
@@ -1284,6 +1630,76 @@ export default function NewRequestPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Image Upload Section */}
+              <div className="bg-gradient-to-l from-blue-50 to-sky-50 rounded-xl p-5 border border-blue-100">
+                <p className="text-sm font-medium text-blue-800 mb-3 flex items-center gap-2">
+                  <span className="text-xl">📷</span> صور <span className="text-blue-500 font-normal">(اختياري - حد أقصى 5 صور)</span>
+                </p>
+                
+                {/* Hidden file inputs */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+
+                {/* Image preview grid */}
+                {images.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                    {images.map((img, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-blue-200 group">
+                        <img
+                          src={img.url}
+                          alt={`صورة ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload buttons */}
+                {images.length < 5 && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors text-sm font-medium text-blue-700"
+                    >
+                      <span className="text-xl">📸</span>
+                      <span>أخذ صورة</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors text-sm font-medium text-blue-700"
+                    >
+                      <span className="text-xl">🖼️</span>
+                      <span>تحميل صور</span>
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-2 text-center">يمكنك إضافة صور توضح احتياجك</p>
               </div>
             </div>
           )}
