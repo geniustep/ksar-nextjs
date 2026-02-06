@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -34,9 +35,18 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary-600">KSAR</span>
-              <span className="text-sm text-gray-500">| إغاثة</span>
+            <Link href="/" className="flex items-center gap-3">
+              <Image
+                src="/logo.png"
+                alt="كرامة قصر"
+                width={70}
+                height={70}
+                className="object-contain"
+              />
+              {/* <div className="flex flex-col">
+                <span className="text-lg font-bold text-primary-600 font-cairo">كرامة قصر</span>
+                <span className="text-xs text-accent-500 font-inter tracking-wider">KKSAR.MA</span>
+              </div> */}
             </Link>
 
             <div className="hidden md:flex items-center gap-4">

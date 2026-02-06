@@ -2,8 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+/* ✍️ الخطوط (Typography) لكرامة قصر - KKSAR.MA */
+/* 🔹 العربية (أساسي) - Cairo: واضح، رسمي، مناسب للويب والموبايل */
+/* 🔹 اللاتينية - Inter: نظيف، حديث، ممتاز للـ UI */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 body {
-  font-family: 'Inter', 'Noto Sans Arabic', sans-serif;
+  font-family: 'Cairo', 'Inter', sans-serif;
+}
+
+/* 🎯 متغيرات الألوان الرسمية */
+:root {
+  --color-primary: #1F4FD8;      /* أزرق هادئ إنساني */
+  --color-secondary: #2FA66A;    /* أخضر كرامة */
+  --color-dark: #2B2B2B;         /* نصوص */
+  --color-light: #F4F6F8;        /* خلفيات */
+  --color-danger: #D83A3A;       /* تنبيه واستعجال */
 }

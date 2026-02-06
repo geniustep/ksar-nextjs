@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Input from '@/components/ui/Input';
@@ -57,8 +58,16 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-3xl font-bold text-primary-600">
-            KSAR
+          <Link href="/" className="inline-flex flex-col items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="كرامة قصر"
+              width={80}
+              height={80}
+              className="object-contain"
+            />
+            {/* <span className="text-2xl font-bold text-primary-600 font-cairo">كرامة قصر</span>
+            <span className="text-sm text-accent-500 font-inter tracking-wider">KKSAR.MA</span> */}
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-4">تسجيل الدخول</h1>
           <p className="text-gray-600 mt-2">أدخل بياناتك للوصول إلى حسابك</p>

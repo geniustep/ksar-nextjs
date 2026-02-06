@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/lib/constants';
 import type { RequestCategory } from '@/lib/types';
@@ -117,7 +118,19 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-lg font-bold text-white mb-2">KSAR - إغاثة</p>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Image
+              src="/logo.png"
+              alt="كرامة قصر"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
+            {/* <div>
+              <p className="text-lg font-bold text-white font-cairo">كرامة قصر</p>
+              <p className="text-xs text-accent-500 font-inter tracking-wider">KKSAR.MA</p>
+            </div> */}
+          </div>
           <p className="text-sm">منصة تنسيق المساعدات الإنسانية</p>
         </div>
       </footer>
