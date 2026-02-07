@@ -89,7 +89,7 @@ export default function HomePage() {
               href="/citizen/new-request"
               className="px-8 py-3.5 bg-white text-primary-700 rounded-xl font-semibold hover:bg-gray-50 transition-all w-full sm:w-auto text-center shadow-lg hover:shadow-xl"
             >
-              تقديم طلب مساعدة
+              الإبلاغ عن وضع إنساني
             </Link>
             <Link
               href="/track"
@@ -267,7 +267,7 @@ export default function HomePage() {
             <div className="flex items-center gap-6 mt-4 text-xs">
               <Link href="/about" className="hover:text-white transition-colors">من نحن</Link>
               <Link href="/track" className="hover:text-white transition-colors">تتبع طلب</Link>
-              <Link href="/citizen/new-request" className="hover:text-white transition-colors">طلب مساعدة</Link>
+              <Link href="/citizen/new-request" className="hover:text-white transition-colors">تسجيل وضع</Link>
             </div>
             <div className="border-t border-gray-800 mt-8 pt-6 w-full text-center">
               <p className="text-xs text-gray-500">كرامة قصر - منصة إنسانية تحفظ الكرامة قبل المساعدة</p>

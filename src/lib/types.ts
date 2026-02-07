@@ -12,7 +12,6 @@ export type RequestCategory =
   | 'blankets'
   | 'baby_supplies'
   | 'hygiene'
-  | 'financial'
   | 'other';
 
 export type RequestStatus = 'new' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';

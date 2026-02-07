@@ -52,7 +52,6 @@ const CATEGORY_COLORS: Record<RequestCategory, string> = {
   blankets: 'from-indigo-400 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600',
   baby_supplies: 'from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600',
   hygiene: 'from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600',
-  financial: 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700',
   other: 'from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600',
 };
 
@@ -65,14 +64,13 @@ const CATEGORY_BG_SELECTED: Record<RequestCategory, string> = {
   blankets: 'ring-indigo-500 bg-indigo-50',
   baby_supplies: 'ring-pink-500 bg-pink-50',
   hygiene: 'ring-teal-500 bg-teal-50',
-  financial: 'ring-emerald-500 bg-emerald-50',
   other: 'ring-gray-500 bg-gray-50',
 };
 
 type AllCategories = RequestCategory[];
 const ALL_CATEGORIES: AllCategories = [
   'food', 'water', 'shelter', 'medicine', 'clothes',
-  'blankets', 'baby_supplies', 'hygiene', 'financial', 'other',
+  'blankets', 'baby_supplies', 'hygiene', 'other',
 ];
 
 function NewRequestContent() {
@@ -797,8 +795,8 @@ function NewRequestContent() {
               <div>
                 <div className="text-center mb-6">
                   <span className="text-4xl mb-2 block">📋</span>
-                  <h2 className="text-xl font-bold text-gray-900">ما نوع المساعدة التي تحتاجها؟</h2>
-                  <p className="text-gray-500 text-sm mt-1">اضغط على نوع المساعدة المناسب</p>
+                  <h2 className="text-xl font-bold text-gray-900">ما نوع الوضع الذي تمرّ به حاليًا؟</h2>
+                  <p className="text-gray-500 text-sm mt-1">اختر ما يعبّر عن وضعك، وسيتم التعامل معه بسرّية واحترام.</p>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1451,8 +1449,8 @@ function NewRequestContent() {
             <div>
               <div className="text-center mb-6">
                 <span className="text-4xl mb-2 block">📋</span>
-                <h2 className="text-xl font-bold text-gray-900">ما نوع المساعدة التي تحتاجها؟</h2>
-                <p className="text-gray-500 text-sm mt-1">اضغط على نوع المساعدة المناسب</p>
+                <h2 className="text-xl font-bold text-gray-900">ما نوع الوضع الذي تمرّ به حاليًا؟</h2>
+                <p className="text-gray-500 text-sm mt-1">اختر ما يعبّر عن وضعك، وسيتم التعامل معه بسرّية واحترام.</p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

@@ -226,7 +226,7 @@ export default function AboutPage() {
             <div className="absolute top-0 left-0 w-40 h-40 bg-accent-500/10 rounded-full blur-3xl" />
             <div className="absolute bottom-0 right-0 w-60 h-60 bg-primary-400/10 rounded-full blur-3xl" />
             <div className="relative">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-6">رسالة لطالب المساعدة</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-6">رسالة موجهة لك</h2>
               <div className="space-y-4 text-primary-100 text-lg leading-loose">
                 <p>أنت لست وحدك.</p>
                 <p>ما تمرّ به لا يعرّفك، ولا ينتقص منك.</p>
@@ -242,10 +242,10 @@ export default function AboutPage() {
               </div>
               <div className="mt-8">
                 <Link
-                  href="/citizen-auth"
+                  href="/citizen/new-request"
                   className="inline-block px-8 py-3.5 bg-white text-primary-700 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-lg"
                 >
-                  قدّم طلبك الآن
+                  تسجيل وضع
                 </Link>
               </div>
             </div>

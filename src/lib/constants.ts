@@ -9,7 +9,6 @@ export const CATEGORY_LABELS: Record<RequestCategory, string> = {
   blankets: 'أغطية',
   baby_supplies: 'مستلزمات أطفال',
   hygiene: 'نظافة',
-  financial: 'مساعدة مالية',
   other: 'أخرى',
 };
 
@@ -22,7 +21,7 @@ export const CATEGORY_ICONS: Record<RequestCategory, string> = {
   blankets: '🛏️',
   baby_supplies: '🍼',
   hygiene: '🧴',
-  financial: '💰',
+  // financial: '💰',
   other: '📦',
 };
 
@@ -65,7 +64,6 @@ export const ALL_CATEGORIES: RequestCategory[] = [
   'blankets',
   'baby_supplies',
   'hygiene',
-  'financial',
   'other',
 ];
 
