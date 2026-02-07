@@ -15,8 +15,9 @@ import {
   REQUEST_STATUS_COLORS,
   CATEGORY_LABELS,
   CATEGORY_ICONS,
+  ALL_REQUEST_STATUSES,
 } from '@/lib/constants';
-import type { InspectorRequestResponse, OrganizationBrief, RequestCategory } from '@/lib/types';
+import type { InspectorRequestResponse, OrganizationBrief, RequestCategory, RequestStatus } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function InspectorRequestDetailPage() {
@@ -43,10 +44,8 @@ export default function InspectorRequestDetailPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
-  const [showAssignOrgForm, setShowAssignOrgForm] = useState(false);
-  const [assignOrgId, setAssignOrgId] = useState('');
-  const [assignOrgPhoneAccess, setAssignOrgPhoneAccess] = useState(false);
-  const [assignOrgNotes, setAssignOrgNotes] = useState('');
+  // Status change
+  const [newStatus, setNewStatus] = useState('');
 
   useEffect(() => {
     loadData();
@@ -61,6 +60,7 @@ export default function InspectorRequestDetailPage() {
       setRequest(reqRes);
       setOrganizations(orgsRes.items);
       setInspectorNotes(reqRes.inspector_notes || '');
+      setNewStatus(reqRes.status);
 
       // Load phone request count
       if (reqRes.requester_phone) {
@@ -136,26 +136,35 @@ export default function InspectorRequestDetailPage() {
     }
   };
 
-  const handleAssignCitizenToOrg = async () => {
-    if (!assignOrgId) {
-      setError('يرجى اختيار جمعية');
-      return;
-    }
+  const handleStatusChange = async () => {
+    if (!newStatus || newStatus === request?.status) return;
     setActionLoading(true);
     setError('');
     setSuccess('');
     try {
-      await inspectorApi.assignCitizenToOrg(requestId, {
-        organization_id: assignOrgId,
-        allow_phone_access: assignOrgPhoneAccess,
-        notes: assignOrgNotes || undefined,
+      await inspectorApi.updateRequestStatus(requestId, {
+        status: newStatus as RequestStatus,
       });
-      setSuccess(
-        assignOrgPhoneAccess
-          ? 'تم إضافة المواطن للجمعية مع السماح برؤية رقم الهاتف'
-          : 'تم إضافة المواطن للجمعية (رقم الهاتف مخفي)'
-      );
-      setShowAssignOrgForm(false);
+      setSuccess('تم تغيير حالة الطلب بنجاح');
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUrgencyToggle = async () => {
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const toggledUrgency = request?.is_urgent === 1 ? 0 : 1;
+      await inspectorApi.updateRequestStatus(requestId, {
+        is_urgent: toggledUrgency,
+      });
+      setSuccess(toggledUrgency === 1 ? 'تم تعيين الطلب كمستعجل' : 'تم إزالة الاستعجال');
       await loadData();
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail);
@@ -444,17 +453,6 @@ export default function InspectorRequestDetailPage() {
                 </Button>
               )}
 
-              {/* Assign citizen to organization */}
-              {(request.status === 'new' || request.status === 'assigned' || request.status === 'in_progress') && (
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => setShowAssignOrgForm(!showAssignOrgForm)}
-                >
-                  إضافة المواطن لجمعية
-                </Button>
-              )}
-
               {canReject && (
                 <Button
                   variant="ghost"
@@ -475,6 +473,58 @@ export default function InspectorRequestDetailPage() {
                   حذف الطلب
                 </Button>
               )}
+            </div>
+          </Card>
+
+          {/* Status & Urgency */}
+          <Card>
+            <CardTitle>تغيير الحالة والأهمية</CardTitle>
+            <div className="space-y-4 mt-4">
+              {/* Status Change */}
+              <div>
+                <Select
+                  label="حالة الطلب"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  options={ALL_REQUEST_STATUSES.map((s) => ({
+                    value: s,
+                    label: REQUEST_STATUS_LABELS[s],
+                  }))}
+                />
+                {newStatus !== request.status && (
+                  <Button
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={handleStatusChange}
+                    loading={actionLoading}
+                  >
+                    تأكيد تغيير الحالة
+                  </Button>
+                )}
+              </div>
+
+              {/* Urgency Toggle */}
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">مستعجل</span>
+                  <button
+                    onClick={handleUrgencyToggle}
+                    disabled={actionLoading}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      request.is_urgent === 1 ? 'bg-red-500' : 'bg-gray-300'
+                    } disabled:opacity-50`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        request.is_urgent === 1 ? 'translate-x-1' : 'translate-x-6'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {request.is_urgent === 1 && (
+                  <p className="text-xs text-red-500 mt-1">هذا الطلب مصنف كمستعجل</p>
+                )}
+              </div>
             </div>
           </Card>
 
@@ -523,70 +573,6 @@ export default function InspectorRequestDetailPage() {
                   <Button
                     variant="ghost"
                     onClick={() => setShowAssignForm(false)}
-                  >
-                    إلغاء
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Assign citizen to organization (new flow) */}
-          {showAssignOrgForm && (
-            <Card>
-              <CardTitle>إضافة المواطن لجمعية</CardTitle>
-              <div className="space-y-4 mt-4">
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-sm text-blue-700">
-                  إضافة هذا المواطن لجمعية معينة للتكفل به. يمكنك التحكم في إظهار رقم الهاتف.
-                </div>
-
-                <Select
-                  label="اختر الجمعية"
-                  value={assignOrgId}
-                  onChange={(e) => setAssignOrgId(e.target.value)}
-                  placeholder="-- اختر جمعية --"
-                  options={organizations.map((org) => ({
-                    value: org.id,
-                    label: `${org.name} (${org.total_completed} مكتمل)`,
-                  }))}
-                />
-
-                <label className="flex items-center gap-2 cursor-pointer p-3 bg-orange-50 border border-orange-100 rounded-xl">
-                  <input
-                    type="checkbox"
-                    checked={assignOrgPhoneAccess}
-                    onChange={(e) => setAssignOrgPhoneAccess(e.target.checked)}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">السماح برؤية رقم الهاتف</span>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {assignOrgPhoneAccess
-                        ? 'الجمعية ستتمكن من رؤية رقم هاتف المواطن'
-                        : 'رقم الهاتف سيكون مخفي عن الجمعية'}
-                    </p>
-                  </div>
-                </label>
-
-                <Textarea
-                  label="ملاحظات (اختياري)"
-                  placeholder="ملاحظات حول الإضافة..."
-                  value={assignOrgNotes}
-                  onChange={(e) => setAssignOrgNotes(e.target.value)}
-                  rows={3}
-                />
-
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={handleAssignCitizenToOrg}
-                    loading={actionLoading}
-                  >
-                    تأكيد الإضافة
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowAssignOrgForm(false)}
                   >
                     إلغاء
                   </Button>

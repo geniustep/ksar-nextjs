@@ -426,6 +426,7 @@ export interface InspectorResponse {
   full_name: string;
   phone: string | null;
   status: string;
+  access_code: string | null;
   created_at: string;
   last_login: string | null;
 }

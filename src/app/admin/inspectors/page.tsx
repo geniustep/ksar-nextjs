@@ -30,6 +30,7 @@ export default function AdminInspectorsPage() {
   const [displayPhone, setDisplayPhone] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
   const [fullInfoCopied, setFullInfoCopied] = useState(false);
+  const [copiedInspectorId, setCopiedInspectorId] = useState<string | null>(null);
 
   useEffect(() => {
     loadInspectors();
@@ -125,6 +126,21 @@ export default function AdminInspectorsPage() {
     setTimeout(() => setFullInfoCopied(false), 2000);
   };
 
+  const copyInspectorCode = async (inspector: InspectorResponse) => {
+    if (!inspector.access_code) return;
+    await navigator.clipboard.writeText(inspector.access_code);
+    setCopiedInspectorId(inspector.id);
+    setTimeout(() => setCopiedInspectorId(null), 2000);
+  };
+
+  const showInspectorInfo = (inspector: InspectorResponse) => {
+    if (!inspector.access_code) return;
+    setDisplayCode(inspector.access_code);
+    setDisplayName(inspector.full_name);
+    setDisplayPhone(inspector.phone || '');
+    setShowCodeModal(true);
+  };
+
   return (
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
@@ -155,6 +171,7 @@ export default function AdminInspectorsPage() {
                 <tr className="border-b border-gray-100">
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">الاسم</th>
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">الهاتف</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">الكود</th>
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">الحالة</th>
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">تاريخ الإنشاء</th>
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">آخر دخول</th>
@@ -166,6 +183,24 @@ export default function AdminInspectorsPage() {
                   <tr key={inspector.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                     <td className="py-3 px-3 font-medium">{inspector.full_name}</td>
                     <td className="py-3 px-3 text-gray-600" dir="ltr">{inspector.phone || '-'}</td>
+                    <td className="py-3 px-3">
+                      {inspector.access_code ? (
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded" dir="ltr">
+                            {inspector.access_code}
+                          </span>
+                          <button
+                            onClick={() => copyInspectorCode(inspector)}
+                            className="text-xs text-gray-500 hover:text-primary-600 transition-colors"
+                            title="نسخ الكود"
+                          >
+                            {copiedInspectorId === inspector.id ? '✓' : '📋'}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </td>
                     <td className="py-3 px-3">
                       <Badge className={
                         inspector.status === 'active'
@@ -195,6 +230,14 @@ export default function AdminInspectorsPage() {
                         >
                           {inspector.status === 'active' ? 'تعطيل' : 'تفعيل'}
                         </button>
+                        {inspector.access_code && (
+                          <button
+                            onClick={() => showInspectorInfo(inspector)}
+                            className="text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded-lg transition-colors"
+                          >
+                            عرض البيانات
+                          </button>
+                        )}
                         <button
                           onClick={() => handleRegenerateCode(inspector)}
                           className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg transition-colors"

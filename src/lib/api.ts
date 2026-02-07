@@ -548,6 +548,13 @@ export const inspectorApi = {
     });
   },
 
+  updateRequestStatus(requestId: string, data: { status?: RequestStatus; is_urgent?: number }): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
   deleteRequest(requestId: string): Promise<{ message: string }> {
     return request(`/api/v1/inspector/requests/${requestId}`, {
       method: 'DELETE',
@@ -560,13 +567,6 @@ export const inspectorApi = {
 
   getOrganizations(): Promise<{ items: OrganizationBrief[] }> {
     return request('/api/v1/inspector/organizations');
-  },
-
-  assignCitizenToOrg(requestId: string, data: { organization_id: string; allow_phone_access?: boolean; notes?: string }): Promise<{ message: string }> {
-    return request(`/api/v1/inspector/requests/${requestId}/assign-org`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
   },
 
   getPhoneRequestCount(phone: string): Promise<{ phone: string; count: number }> {

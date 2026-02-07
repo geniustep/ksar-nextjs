@@ -50,6 +50,7 @@ function InspectorRequestsContent() {
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [urgentOnly, setUrgentOnly] = useState(false);
+  const [mineOnly, setMineOnly] = useState(false);
 
   const limit = 20;
 
@@ -61,6 +62,7 @@ function InspectorRequestsContent() {
         category: categoryFilter ? (categoryFilter as RequestCategory) : undefined,
         search: searchQuery || undefined,
         is_urgent: urgentOnly ? true : undefined,
+        mine_only: mineOnly ? true : undefined,
         page,
         limit,
       });
@@ -86,7 +88,7 @@ function InspectorRequestsContent() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, categoryFilter, searchQuery, urgentOnly, page]);
+  }, [statusFilter, categoryFilter, searchQuery, urgentOnly, mineOnly, page]);
 
   useEffect(() => {
     loadRequests();
@@ -152,7 +154,16 @@ function InspectorRequestsContent() {
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
           />
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mineOnly}
+                onChange={(e) => { setMineOnly(e.target.checked); setPage(1); }}
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-sm text-gray-600">طلباتي فقط</span>
+            </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
