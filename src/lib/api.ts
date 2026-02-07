@@ -37,6 +37,17 @@ import type {
   PhoneRequestsResponse,
   PhoneRegisterRequest,
   PhoneRegisterResponse,
+  InspectorLoginRequest,
+  InspectorLoginResponse,
+  InspectorRequestResponse,
+  InspectorAssignRequest,
+  InspectorRejectRequest,
+  InspectorRequestUpdate,
+  InspectorStats,
+  InspectorCreateRequest,
+  InspectorCreatedResponse,
+  InspectorListResponse,
+  OrganizationBrief,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ksar.geniura.com';
@@ -79,7 +90,14 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: 'خطأ في الخادم' }));
-    throw new ApiError(res.status, body.detail || 'خطأ غير متوقع');
+    let detail = body.detail || 'خطأ غير متوقع';
+    // FastAPI validation errors return detail as an array of objects
+    if (Array.isArray(detail)) {
+      detail = detail.map((e: { msg?: string }) => e.msg || JSON.stringify(e)).join(', ');
+    } else if (typeof detail === 'object') {
+      detail = JSON.stringify(detail);
+    }
+    throw new ApiError(res.status, detail);
   }
 
   if (res.status === 204) return {} as T;
@@ -345,6 +363,126 @@ export const adminApi = {
     return request(`/api/v1/admin/organizations/${orgId}/status?status=${status}`, {
       method: 'PATCH',
     });
+  },
+
+  // === Inspector Management ===
+
+  createInspector(data: InspectorCreateRequest): Promise<InspectorCreatedResponse> {
+    return request('/api/v1/admin/inspectors', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getInspectors(params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<InspectorListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    return request(`/api/v1/admin/inspectors${qs ? '?' + qs : ''}`);
+  },
+
+  updateInspectorStatus(inspectorId: string, status: string): Promise<{ message: string }> {
+    return request(`/api/v1/admin/inspectors/${inspectorId}/status?status=${status}`, {
+      method: 'PATCH',
+    });
+  },
+
+  regenerateInspectorCode(inspectorId: string): Promise<{ message: string; access_code: string }> {
+    return request(`/api/v1/admin/inspectors/${inspectorId}/regenerate-code`, {
+      method: 'POST',
+    });
+  },
+
+  deleteInspector(inspectorId: string): Promise<{ message: string }> {
+    return request(`/api/v1/admin/inspectors/${inspectorId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// === Inspector API ===
+
+export const inspectorApi = {
+  login(data: InspectorLoginRequest): Promise<InspectorLoginResponse> {
+    return request('/api/v1/auth/inspector-login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getRequests(params?: {
+    status?: RequestStatus;
+    category?: RequestCategory;
+    region?: string;
+    is_urgent?: boolean;
+    search?: string;
+    mine_only?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedRequests> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.region) searchParams.set('region', params.region);
+    if (params?.is_urgent !== undefined) searchParams.set('is_urgent', String(params.is_urgent));
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.mine_only) searchParams.set('mine_only', 'true');
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    return request(`/api/v1/inspector/requests${qs ? '?' + qs : ''}`);
+  },
+
+  getRequest(requestId: string): Promise<InspectorRequestResponse> {
+    return request(`/api/v1/inspector/requests/${requestId}`);
+  },
+
+  activateRequest(requestId: string, notes?: string): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/activate`, {
+      method: 'PATCH',
+      body: JSON.stringify(notes ? { inspector_notes: notes } : {}),
+    });
+  },
+
+  rejectRequest(requestId: string, reason?: string): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify(reason ? { reason } : {}),
+    });
+  },
+
+  assignRequest(requestId: string, data: InspectorAssignRequest): Promise<{ message: string }> {
+    return request(`/api/v1/inspector/requests/${requestId}/assign`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateRequestNotes(requestId: string, data: InspectorRequestUpdate): Promise<{ message: string }> {
+    return request(`/api/v1/inspector/requests/${requestId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteRequest(requestId: string): Promise<{ message: string }> {
+    return request(`/api/v1/inspector/requests/${requestId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  getStats(): Promise<InspectorStats> {
+    return request('/api/v1/inspector/stats');
+  },
+
+  getOrganizations(): Promise<{ items: OrganizationBrief[] }> {
+    return request('/api/v1/inspector/organizations');
   },
 };
 

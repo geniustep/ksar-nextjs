@@ -21,6 +21,8 @@ export default function Navbar() {
     switch (user.role) {
       case 'admin':
         return '/admin';
+      case 'inspector':
+        return '/inspector';
       case 'organization':
         return '/org/requests';
       case 'citizen':

@@ -1,6 +1,6 @@
 // === Enums ===
 
-export type UserRole = 'admin' | 'organization' | 'citizen';
+export type UserRole = 'admin' | 'organization' | 'citizen' | 'inspector';
 export type UserStatus = 'active' | 'suspended';
 
 export type RequestCategory =
@@ -14,7 +14,7 @@ export type RequestCategory =
   | 'hygiene'
   | 'other';
 
-export type RequestStatus = 'new' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+export type RequestStatus = 'pending' | 'new' | 'assigned' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
 export type AssignmentStatus = 'pledged' | 'in_progress' | 'completed' | 'failed';
 export type OrganizationStatus = 'active' | 'suspended';
 
@@ -354,4 +354,101 @@ export interface AdminOrgList {
   total: number;
   page: number;
   limit: number;
+}
+
+// === Inspector ===
+
+export interface InspectorLoginRequest {
+  phone: string;
+  code: string;
+}
+
+export interface InspectorLoginResponse {
+  access_token: string;
+  token_type: string;
+  user: UserResponse;
+}
+
+export interface InspectorRequestResponse {
+  id: string;
+  requester_name: string;
+  requester_phone: string;
+  category: RequestCategory;
+  description: string | null;
+  quantity: number;
+  family_members: number;
+  address: string | null;
+  city: string | null;
+  region: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  audio_url: string | null;
+  images: string | null;
+  status: RequestStatus;
+  priority_score: number;
+  is_urgent: number;
+  inspector_id: string | null;
+  inspector_notes: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string | null;
+  completed_at: string | null;
+}
+
+export interface InspectorAssignRequest {
+  organization_id: string;
+  notes?: string;
+}
+
+export interface InspectorRejectRequest {
+  reason?: string;
+}
+
+export interface InspectorRequestUpdate {
+  inspector_notes?: string;
+}
+
+export interface InspectorStats {
+  total_reviewed: number;
+  pending_count: number;
+  activated_count: number;
+  rejected_count: number;
+  assigned_count: number;
+}
+
+export interface InspectorCreateRequest {
+  full_name: string;
+  phone: string;
+}
+
+export interface InspectorResponse {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  status: string;
+  created_at: string;
+  last_login: string | null;
+}
+
+export interface InspectorCreatedResponse {
+  message: string;
+  inspector: InspectorResponse;
+  access_code: string;
+}
+
+export interface InspectorListResponse {
+  items: InspectorResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface OrganizationBrief {
+  id: string;
+  name: string;
+  contact_phone: string | null;
+  contact_email: string | null;
+  service_types: string[];
+  coverage_areas: string[];
+  total_completed: number;
 }

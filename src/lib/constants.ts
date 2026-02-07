@@ -26,19 +26,23 @@ export const CATEGORY_ICONS: Record<RequestCategory, string> = {
 };
 
 export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
+  pending: 'معلق',
   new: 'جديد',
   assigned: 'متكفل به',
   in_progress: 'قيد التنفيذ',
   completed: 'مكتمل',
   cancelled: 'ملغي',
+  rejected: 'مرفوض',
 };
 
 export const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
+  pending: 'bg-purple-100 text-purple-800',
   new: 'bg-blue-100 text-blue-800',
   assigned: 'bg-yellow-100 text-yellow-800',
   in_progress: 'bg-orange-100 text-orange-800',
   completed: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
+  rejected: 'bg-gray-100 text-gray-800',
 };
 
 export const ASSIGNMENT_STATUS_LABELS: Record<AssignmentStatus, string> = {
@@ -68,11 +72,13 @@ export const ALL_CATEGORIES: RequestCategory[] = [
 ];
 
 export const ALL_REQUEST_STATUSES: RequestStatus[] = [
+  'pending',
   'new',
   'assigned',
   'in_progress',
   'completed',
   'cancelled',
+  'rejected',
 ];
 
 export const ALL_ASSIGNMENT_STATUSES: AssignmentStatus[] = [

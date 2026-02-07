@@ -1,0 +1,498 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import DashboardLayout from '@/components/DashboardLayout';
+import { Card, CardTitle } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Spinner from '@/components/ui/Spinner';
+import Textarea from '@/components/ui/Textarea';
+import Select from '@/components/ui/Select';
+import { inspectorApi, ApiError } from '@/lib/api';
+import {
+  REQUEST_STATUS_LABELS,
+  REQUEST_STATUS_COLORS,
+  CATEGORY_LABELS,
+  CATEGORY_ICONS,
+} from '@/lib/constants';
+import type { InspectorRequestResponse, OrganizationBrief, RequestCategory } from '@/lib/types';
+
+export default function InspectorRequestDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const requestId = params.id as string;
+
+  const [request, setRequest] = useState<InspectorRequestResponse | null>(null);
+  const [organizations, setOrganizations] = useState<OrganizationBrief[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Form state
+  const [inspectorNotes, setInspectorNotes] = useState('');
+  const [selectedOrgId, setSelectedOrgId] = useState('');
+  const [assignNotes, setAssignNotes] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [showAssignForm, setShowAssignForm] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, [requestId]);
+
+  const loadData = async () => {
+    try {
+      const [reqRes, orgsRes] = await Promise.all([
+        inspectorApi.getRequest(requestId),
+        inspectorApi.getOrganizations(),
+      ]);
+      setRequest(reqRes);
+      setOrganizations(orgsRes.items);
+      setInspectorNotes(reqRes.inspector_notes || '');
+    } catch (err) {
+      console.error('Failed to load request:', err);
+      setError('فشل في تحميل بيانات الطلب');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleActivate = async () => {
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await inspectorApi.activateRequest(requestId, inspectorNotes || undefined);
+      setSuccess('تم تفعيل الطلب بنجاح');
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await inspectorApi.rejectRequest(requestId, rejectReason || undefined);
+      setSuccess('تم رفض الطلب');
+      setShowRejectForm(false);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!selectedOrgId) {
+      setError('يرجى اختيار جمعية');
+      return;
+    }
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await inspectorApi.assignRequest(requestId, {
+        organization_id: selectedOrgId,
+        notes: assignNotes || undefined,
+      });
+      setSuccess('تم ربط الطلب بالجمعية بنجاح');
+      setShowAssignForm(false);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    setActionLoading(true);
+    setError('');
+    try {
+      await inspectorApi.updateRequestNotes(requestId, { inspector_notes: inspectorNotes });
+      setSuccess('تم حفظ الملاحظات');
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('هل أنت متأكد من حذف هذا الطلب؟ هذا الإجراء لا يمكن التراجع عنه.')) return;
+    setActionLoading(true);
+    setError('');
+    try {
+      await inspectorApi.deleteRequest(requestId);
+      router.push('/inspector/requests');
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+      setActionLoading(false);
+    }
+  };
+
+  const parseImages = (imagesStr: string | null): string[] => {
+    if (!imagesStr) return [];
+    try {
+      return JSON.parse(imagesStr);
+    } catch {
+      return [];
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center py-12"><Spinner /></div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!request) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <p className="text-gray-500">الطلب غير موجود</p>
+          <Button variant="ghost" onClick={() => router.push('/inspector/requests')} className="mt-4">
+            العودة للقائمة
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const images = parseImages(request.images);
+  const canActivate = request.status === 'pending';
+  const canReject = request.status === 'pending';
+  const canAssign = request.status === 'pending' || request.status === 'new';
+  const canDelete = request.status === 'pending' || request.status === 'new' || request.status === 'rejected' || request.status === 'cancelled';
+
+  return (
+    <DashboardLayout>
+      {/* Header */}
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-gray-500 hover:text-gray-700 mb-2 flex items-center gap-1"
+          >
+            <span>&larr;</span> العودة
+          </button>
+          <h1 className="text-2xl font-bold text-neutral-dark">تفاصيل الطلب</h1>
+        </div>
+        <Badge className={`${REQUEST_STATUS_COLORS[request.status]} text-base px-4 py-1`}>
+          {REQUEST_STATUS_LABELS[request.status]}
+        </Badge>
+      </div>
+
+      {/* Messages */}
+      {error && (
+        <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl mb-4">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-xl mb-4">
+          {success}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Request Info */}
+          <Card>
+            <CardTitle>معلومات الطلب</CardTitle>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">صاحب الطلب</p>
+                <p className="font-medium">{request.requester_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">رقم الهاتف</p>
+                <p className="font-medium" dir="ltr">{request.requester_phone}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">التصنيف</p>
+                <p className="font-medium">
+                  {CATEGORY_ICONS[request.category as RequestCategory]}{' '}
+                  {CATEGORY_LABELS[request.category as RequestCategory] || request.category}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">أفراد الأسرة</p>
+                <p className="font-medium">{request.family_members}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">الكمية</p>
+                <p className="font-medium">{request.quantity}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">الأولوية</p>
+                <p className="font-medium">{request.priority_score}/100</p>
+              </div>
+              {request.is_urgent === 1 && (
+                <div className="col-span-2">
+                  <Badge className="bg-red-100 text-red-800">مستعجل</Badge>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Description */}
+          {request.description && (
+            <Card>
+              <CardTitle>الوصف</CardTitle>
+              <p className="text-gray-700 mt-2 whitespace-pre-wrap">{request.description}</p>
+            </Card>
+          )}
+
+          {/* Location */}
+          <Card>
+            <CardTitle>الموقع</CardTitle>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">العنوان</p>
+                <p className="text-gray-700">{request.address || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">المدينة</p>
+                <p className="text-gray-700">{request.city || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">المنطقة</p>
+                <p className="text-gray-700">{request.region || '-'}</p>
+              </div>
+              {request.latitude && request.longitude && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">الإحداثيات</p>
+                  <p className="text-gray-700 text-xs" dir="ltr">
+                    {request.latitude.toFixed(5)}, {request.longitude.toFixed(5)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Audio */}
+          {request.audio_url && (
+            <Card>
+              <CardTitle>تسجيل صوتي</CardTitle>
+              <audio controls className="w-full mt-2" src={request.audio_url}>
+                <track kind="captions" />
+              </audio>
+            </Card>
+          )}
+
+          {/* Images */}
+          {images.length > 0 && (
+            <Card>
+              <CardTitle>الصور</CardTitle>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                {images.map((img, i) => (
+                  <a key={i} href={img} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={img}
+                      alt={`صورة ${i + 1}`}
+                      className="w-full h-32 object-cover rounded-xl border border-gray-100"
+                    />
+                  </a>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Dates */}
+          <Card>
+            <CardTitle>التواريخ</CardTitle>
+            <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">تاريخ الإنشاء</p>
+                <p>{new Date(request.created_at).toLocaleString('ar-MA')}</p>
+              </div>
+              {request.updated_at && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">آخر تحديث</p>
+                  <p>{new Date(request.updated_at).toLocaleString('ar-MA')}</p>
+                </div>
+              )}
+              {request.completed_at && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">تاريخ الإتمام</p>
+                  <p>{new Date(request.completed_at).toLocaleString('ar-MA')}</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Sidebar - Actions */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card>
+            <CardTitle>الإجراءات</CardTitle>
+            <div className="space-y-3 mt-4">
+              {canActivate && (
+                <Button
+                  className="w-full"
+                  onClick={handleActivate}
+                  loading={actionLoading}
+                >
+                  تفعيل الطلب
+                </Button>
+              )}
+
+              {canAssign && (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => setShowAssignForm(!showAssignForm)}
+                >
+                  ربط بجمعية
+                </Button>
+              )}
+
+              {canReject && (
+                <Button
+                  variant="ghost"
+                  className="w-full text-orange-600 hover:bg-orange-50"
+                  onClick={() => setShowRejectForm(!showRejectForm)}
+                >
+                  رفض الطلب
+                </Button>
+              )}
+
+              {canDelete && (
+                <Button
+                  variant="danger"
+                  className="w-full"
+                  onClick={handleDelete}
+                  loading={actionLoading}
+                >
+                  حذف الطلب
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          {/* Assign Form */}
+          {showAssignForm && (
+            <Card>
+              <CardTitle>ربط بجمعية</CardTitle>
+              <div className="space-y-4 mt-4">
+                <Select
+                  label="اختر الجمعية"
+                  value={selectedOrgId}
+                  onChange={(e) => setSelectedOrgId(e.target.value)}
+                  placeholder="-- اختر جمعية --"
+                  options={organizations.map((org) => ({
+                    value: org.id,
+                    label: `${org.name} (${org.total_completed} مكتمل)`,
+                  }))}
+                />
+
+                <Textarea
+                  label="ملاحظات (اختياري)"
+                  placeholder="ملاحظات حول الربط..."
+                  value={assignNotes}
+                  onChange={(e) => setAssignNotes(e.target.value)}
+                  rows={3}
+                />
+
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    onClick={handleAssign}
+                    loading={actionLoading}
+                  >
+                    تأكيد الربط
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAssignForm(false)}
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Reject Form */}
+          {showRejectForm && (
+            <Card>
+              <CardTitle>رفض الطلب</CardTitle>
+              <div className="space-y-4 mt-4">
+                <Textarea
+                  label="سبب الرفض (اختياري)"
+                  placeholder="أدخل سبب الرفض..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={3}
+                />
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="danger"
+                    className="flex-1"
+                    onClick={handleReject}
+                    loading={actionLoading}
+                  >
+                    تأكيد الرفض
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowRejectForm(false)}
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Inspector Notes */}
+          <Card>
+            <CardTitle>ملاحظات المراقب</CardTitle>
+            <div className="space-y-3 mt-4">
+              <Textarea
+                placeholder="أضف ملاحظاتك حول هذا الطلب..."
+                value={inspectorNotes}
+                onChange={(e) => setInspectorNotes(e.target.value)}
+                rows={4}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleSaveNotes}
+                loading={actionLoading}
+              >
+                حفظ الملاحظات
+              </Button>
+            </div>
+          </Card>
+
+          {/* Admin Notes (read-only) */}
+          {request.admin_notes && (
+            <Card>
+              <CardTitle>ملاحظات الإدارة</CardTitle>
+              <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{request.admin_notes}</p>
+            </Card>
+          )}
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

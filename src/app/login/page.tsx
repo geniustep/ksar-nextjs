@@ -44,6 +44,9 @@ export default function LoginPage() {
         case 'admin':
           router.push('/admin');
           break;
+        case 'inspector':
+          router.push('/inspector');
+          break;
         case 'organization':
           router.push('/org/requests');
           break;
@@ -115,6 +118,12 @@ export default function LoginPage() {
               className="block text-sm text-accent-500 hover:text-accent-600 font-semibold"
             >
               ادخل برقم هاتفك مباشرة
+            </Link>
+            <Link
+              href="/inspector-auth"
+              className="block text-sm text-gray-400 hover:text-primary-600"
+            >
+              دخول المراقب
             </Link>
           </div>
         </div>

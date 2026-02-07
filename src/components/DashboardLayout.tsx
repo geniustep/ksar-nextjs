@@ -18,11 +18,17 @@ const adminNav: NavItem[] = [
   { label: 'الإحصائيات', href: '/admin', icon: '📊' },
   { label: 'الطلبات', href: '/admin/requests', icon: '📋' },
   { label: 'المؤسسات', href: '/admin/organizations', icon: '🏢' },
+  { label: 'المراقبون', href: '/admin/inspectors', icon: '👁️' },
 ];
 
 const orgNav: NavItem[] = [
   { label: 'الطلبات المتاحة', href: '/org/requests', icon: '📋' },
   { label: 'تكفلاتي', href: '/org/assignments', icon: '✅' },
+];
+
+const inspectorNav: NavItem[] = [
+  { label: 'لوحة التحكم', href: '/inspector', icon: '📊' },
+  { label: 'الطلبات', href: '/inspector/requests', icon: '📋' },
 ];
 
 const citizenNav: NavItem[] = [
@@ -57,6 +63,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     case 'admin':
       navItems = adminNav;
       title = 'لوحة الإدارة';
+      break;
+    case 'inspector':
+      navItems = inspectorNav;
+      title = 'لوحة المراقب';
       break;
     case 'organization':
       navItems = orgNav;
