@@ -15,11 +15,11 @@ import type { RequestCategory } from '@/lib/types';
 // Storage key for pending request (for guest flow)
 const PENDING_REQUEST_KEY = 'pending_request_data';
 
-// Steps for authenticated users (5 steps)
+// Steps for authenticated users (5 steps) - معلومات الأسرة قبل تفاصيل الوضع
 const STEPS_AUTH = [
   { id: 1, title: 'تحديد الوضع', icon: '🕊️' },
-  { id: 2, title: 'تفاصيل الوضع', icon: '✏️' },
-  { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 2, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 3, title: 'تفاصيل الوضع', icon: '✏️' },
   { id: 4, title: 'الموقع', icon: '📍' },
   { id: 5, title: 'مراجعة وتأكيد', icon: '✅' },
 ];
@@ -27,8 +27,8 @@ const STEPS_AUTH = [
 // Steps for guest users (6 steps - includes phone registration)
 const STEPS_GUEST = [
   { id: 1, title: 'تحديد الوضع', icon: '🕊️' },
-  { id: 2, title: 'تفاصيل الوضع', icon: '✏️' },
-  { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 2, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 3, title: 'تفاصيل الوضع', icon: '✏️' },
   { id: 4, title: 'الموقع', icon: '📍' },
   { id: 5, title: 'مراجعة', icon: '✅' },
   { id: 6, title: 'رقم الهاتف', icon: '📱' },
@@ -37,8 +37,8 @@ const STEPS_GUEST = [
 // Legacy - for backward compatibility
 const STEPS = [
   { id: 1, title: 'تحديد الوضع', icon: '🕊️' },
-  { id: 2, title: 'تفاصيل الوضع', icon: '✏️' },
-  { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 2, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
+  { id: 3, title: 'تفاصيل الوضع', icon: '✏️' },
   { id: 4, title: 'الموقع', icon: '📍' },
   { id: 5, title: 'مراجعة وتأكيد', icon: '✅' },
 ];
@@ -83,6 +83,7 @@ interface CategoryGroup {
   subItems: SubItem[];
 }
 
+// 4 تصنيفات فقط: السكن والاستقرار، الاحتياجات اليومية، الأسرة والأطفال، أخرى
 const CATEGORY_GROUPS: CategoryGroup[] = [
   {
     id: 'housing',
@@ -100,54 +101,16 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
   },
   {
     id: 'daily_needs',
-    title: 'الاحتياجات اليومية',
-    icon: '🍽️',
+    title: 'المعيشة اليومية',
+    icon: '🧺',
     apiCategory: 'food',
     iconBg: 'bg-orange-100',
     selectedBg: 'ring-orange-400 bg-orange-50 border-orange-200',
     subItems: [
-      { id: 'basic_food', label: 'مواد غذائية أساسية' },
-      { id: 'clean_water', label: 'مياه صالحة للاستعمال' },
-      { id: 'cooking_supplies', label: 'مستلزمات الطبخ' },
-    ],
-  },
-  {
-    id: 'clothing',
-    title: 'الكساء والوقاية',
-    icon: '👕',
-    apiCategory: 'clothes',
-    iconBg: 'bg-purple-100',
-    selectedBg: 'ring-purple-400 bg-purple-50 border-purple-200',
-    subItems: [
-      { id: 'weather_clothes', label: 'ملابس مناسبة للطقس' },
-      { id: 'shoes', label: 'أحذية' },
-      { id: 'winter_clothes', label: 'أغطية وملابس شتوية' },
-    ],
-  },
-  {
-    id: 'hygiene',
-    title: 'الصحة والنظافة',
-    icon: '🧼',
-    apiCategory: 'hygiene',
-    iconBg: 'bg-teal-100',
-    selectedBg: 'ring-teal-400 bg-teal-50 border-teal-200',
-    subItems: [
-      { id: 'personal_hygiene', label: 'مستلزمات النظافة الشخصية' },
-      { id: 'sanitization', label: 'مواد تعقيم' },
-      { id: 'basic_health', label: 'احتياجات صحية أساسية' },
-    ],
-  },
-  {
-    id: 'healthcare',
-    title: 'الرعاية الصحية',
-    icon: '💊',
-    apiCategory: 'medicine',
-    iconBg: 'bg-red-100',
-    selectedBg: 'ring-red-400 bg-red-50 border-red-200',
-    subItems: [
-      { id: 'essential_meds', label: 'أدوية ضرورية' },
-      { id: 'medical_supplies', label: 'مستلزمات طبية' },
-      { id: 'health_followup', label: 'متابعة صحية' },
+      { id: 'basket', label: '🧺 القفّة' },
+      { id: 'basic_food', label: '🍞 مواد أساسية' },
+      { id: 'clean_water', label: '🚰 ماء صالح للاستعمال' },
+      { id: 'cooking_supplies', label: '🍳 مستلزمات الطبخ' },
     ],
   },
   {
@@ -161,24 +124,12 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
       { id: 'child_supplies', label: 'مستلزمات الأطفال' },
       { id: 'baby_milk', label: 'حليب وحاجيات الرضع' },
       { id: 'school_supplies', label: 'لوازم مدرسية أساسية' },
-    ],
-  },
-  {
-    id: 'support',
-    title: 'المواكبة والدعم',
-    icon: '🤍',
-    apiCategory: 'other',
-    iconBg: 'bg-blue-100',
-    selectedBg: 'ring-blue-400 bg-blue-50 border-blue-200',
-    subItems: [
-      { id: 'humanitarian_support', label: 'مواكبة إنسانية' },
-      { id: 'social_support', label: 'دعم اجتماعي مؤقّت' },
-      { id: 'guidance', label: 'توجيه ومرافقة' },
+      { id: 'psychological_support', label: 'مواكبة نفسية' },
     ],
   },
   {
     id: 'other_needs',
-    title: 'احتياجات أخرى',
+    title: 'أخرى',
     icon: '📦',
     apiCategory: 'other',
     iconBg: 'bg-gray-100',
@@ -1118,8 +1069,81 @@ function NewRequestContent() {
               </div>
             )}
 
-            {/* Step 2 */}
+            {/* Step 2 - معلومات الأسرة */}
             {step === 2 && (
+              <div>
+                <div className="text-center mb-6">
+                  <span className="text-4xl mb-2 block">👨‍👩‍👧‍👦</span>
+                  <h2 className="text-xl font-bold text-gray-900">معلومات الأسرة</h2>
+                  <p className="text-gray-500 text-sm mt-1">ساعدنا نفهم احتياجك بشكل أفضل</p>
+                </div>
+
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                      <span>📦</span> الكمية المطلوبة
+                    </label>
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, quantity: String(Math.max(1, parseInt(form.quantity) - 1)) })}
+                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        value={form.quantity}
+                        onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                        min="1"
+                        max="100"
+                        className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, quantity: String(Math.min(100, parseInt(form.quantity) + 1)) })}
+                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                      <span>👥</span> عدد أفراد الأسرة
+                    </label>
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, family_members: String(Math.max(1, parseInt(form.family_members) - 1)) })}
+                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        value={form.family_members}
+                        onChange={(e) => setForm({ ...form, family_members: e.target.value })}
+                        min="1"
+                        max="50"
+                        className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, family_members: String(Math.min(50, parseInt(form.family_members) + 1)) })}
+                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3 - تفاصيل الوضع */}
+            {step === 3 && (
               <div>
                 <div className="text-center mb-6">
                   <span className="text-4xl mb-2 block">✏️</span>
@@ -1273,79 +1297,6 @@ function NewRequestContent() {
                     </div>
                   )}
                   <p className="text-xs text-gray-500 mt-2 text-center">يمكنك إضافة صور توضح احتياجك</p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3 */}
-            {step === 3 && (
-              <div>
-                <div className="text-center mb-6">
-                  <span className="text-4xl mb-2 block">👨‍👩‍👧‍👦</span>
-                  <h2 className="text-xl font-bold text-gray-900">معلومات الأسرة</h2>
-                  <p className="text-gray-500 text-sm mt-1">ساعدنا نفهم احتياجك بشكل أفضل</p>
-                </div>
-
-                <div className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
-                      <span>📦</span> الكمية المطلوبة
-                    </label>
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, quantity: String(Math.max(1, parseInt(form.quantity) - 1)) })}
-                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        value={form.quantity}
-                        onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                        min="1"
-                        max="100"
-                        className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, quantity: String(Math.min(100, parseInt(form.quantity) + 1)) })}
-                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
-                      <span>👥</span> عدد أفراد الأسرة
-                    </label>
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, family_members: String(Math.max(1, parseInt(form.family_members) - 1)) })}
-                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        value={form.family_members}
-                        onChange={(e) => setForm({ ...form, family_members: e.target.value })}
-                        min="1"
-                        max="50"
-                        className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, family_members: String(Math.min(50, parseInt(form.family_members) + 1)) })}
-                        className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
@@ -1848,8 +1799,110 @@ function NewRequestContent() {
             </div>
           )}
 
-          {/* ===== Step 2: Description, Voice & Images ===== */}
+          {/* ===== Step 2: معلومات الأسرة ===== */}
           {step === 2 && (
+            <div>
+              <div className="text-center mb-6">
+                <span className="text-4xl mb-2 block">👨‍👩‍👧‍👦</span>
+                <h2 className="text-xl font-bold text-gray-900">معلومات الأسرة</h2>
+                <p className="text-gray-500 text-sm mt-1">ساعدنا نفهم احتياجك بشكل أفضل</p>
+              </div>
+
+              <div className="space-y-5">
+                {/* Quantity */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                    <span>📦</span> الكمية المطلوبة
+                  </label>
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, quantity: String(Math.max(1, parseInt(form.quantity) - 1)) })}
+                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      value={form.quantity}
+                      onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                      min="1"
+                      max="100"
+                      className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, quantity: String(Math.min(100, parseInt(form.quantity) + 1)) })}
+                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Family members */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                    <span>👥</span> عدد أفراد الأسرة
+                  </label>
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, family_members: String(Math.max(1, parseInt(form.family_members) - 1)) })}
+                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      value={form.family_members}
+                      onChange={(e) => setForm({ ...form, family_members: e.target.value })}
+                      min="1"
+                      max="50"
+                      className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, family_members: String(Math.min(50, parseInt(form.family_members) + 1)) })}
+                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick family size buttons */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">اختيار سريع:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'شخص واحد 🧑', value: '1' },
+                      { label: 'زوجان 👫', value: '2' },
+                      { label: 'عائلة صغيرة 👨‍👩‍👦', value: '3' },
+                      { label: 'عائلة متوسطة 👨‍👩‍👧‍👦', value: '5' },
+                      { label: 'عائلة كبيرة 👨‍👩‍👧‍👦+', value: '8' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setForm({ ...form, family_members: opt.value })}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                          form.family_members === opt.value
+                            ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-sm'
+                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== Step 3: تفاصيل الوضع (وصف، صوت، صور) ===== */}
+          {step === 3 && (
             <div>
               <div className="text-center mb-6">
                 <span className="text-4xl mb-2 block">✏️</span>
@@ -2017,108 +2070,6 @@ function NewRequestContent() {
                   </div>
                 )}
                 <p className="text-xs text-gray-500 mt-2 text-center">يمكنك إضافة صور توضح احتياجك</p>
-              </div>
-            </div>
-          )}
-
-          {/* ===== Step 3: Family Info ===== */}
-          {step === 3 && (
-            <div>
-              <div className="text-center mb-6">
-                <span className="text-4xl mb-2 block">👨‍👩‍👧‍👦</span>
-                <h2 className="text-xl font-bold text-gray-900">معلومات الأسرة</h2>
-                <p className="text-gray-500 text-sm mt-1">ساعدنا نفهم احتياجك بشكل أفضل</p>
-              </div>
-
-              <div className="space-y-5">
-                {/* Quantity */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
-                    <span>📦</span> الكمية المطلوبة
-                  </label>
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, quantity: String(Math.max(1, parseInt(form.quantity) - 1)) })}
-                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      value={form.quantity}
-                      onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                      min="1"
-                      max="100"
-                      className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, quantity: String(Math.min(100, parseInt(form.quantity) + 1)) })}
-                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Family members */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
-                    <span>👥</span> عدد أفراد الأسرة
-                  </label>
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, family_members: String(Math.max(1, parseInt(form.family_members) - 1)) })}
-                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      value={form.family_members}
-                      onChange={(e) => setForm({ ...form, family_members: e.target.value })}
-                      min="1"
-                      max="50"
-                      className="flex-1 text-center text-2xl font-bold bg-white border border-gray-200 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, family_members: String(Math.min(50, parseInt(form.family_members) + 1)) })}
-                      className="w-11 h-11 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center shadow-sm"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Quick family size buttons */}
-                <div>
-                  <p className="text-xs text-gray-500 mb-2">اختيار سريع:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { label: 'شخص واحد 🧑', value: '1' },
-                      { label: 'زوجان 👫', value: '2' },
-                      { label: 'عائلة صغيرة 👨‍👩‍👦', value: '3' },
-                      { label: 'عائلة متوسطة 👨‍👩‍👧‍👦', value: '5' },
-                      { label: 'عائلة كبيرة 👨‍👩‍👧‍👦+', value: '8' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setForm({ ...form, family_members: opt.value })}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                          form.family_members === opt.value
-                            ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-sm'
-                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           )}

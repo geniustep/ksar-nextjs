@@ -56,8 +56,8 @@ export default function Navbar() {
               <Link href="/about" className="text-sm text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-primary-50">
                 من نحن
               </Link>
-              <Link href="/track" className="text-sm text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-primary-50">
-                تتبع طلب
+              <Link href="/org" className="text-sm text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-primary-50">
+                المواكبة الإنسانية
               </Link>
             </div>
           </div>
@@ -126,8 +126,8 @@ export default function Navbar() {
             <Link href="/about" className="block text-sm text-gray-600 py-2.5 px-3 rounded-lg hover:bg-primary-50" onClick={() => setMenuOpen(false)}>
               من نحن
             </Link>
-            <Link href="/track" className="block text-sm text-gray-600 py-2.5 px-3 rounded-lg hover:bg-primary-50" onClick={() => setMenuOpen(false)}>
-              تتبع طلب
+            <Link href="/org" className="block text-sm text-gray-600 py-2.5 px-3 rounded-lg hover:bg-primary-50" onClick={() => setMenuOpen(false)}>
+              المواكبة الإنسانية
             </Link>
             {isAuthenticated && user ? (
               <>

@@ -92,10 +92,10 @@ export default function HomePage() {
               الإبلاغ عن وضع إنساني
             </Link>
             <Link
-              href="/track"
+              href="/org"
               className="px-8 py-3.5 border-2 border-white/30 text-white rounded-xl font-semibold hover:bg-white/10 transition-all w-full sm:w-auto text-center backdrop-blur-sm"
             >
-              تتبع طلب سابق
+              المواكبة الإنسانية
             </Link>
           </div>
         </div>
@@ -266,7 +266,7 @@ export default function HomePage() {
             <p className="text-sm mb-2">لأن الظرف لا يُسقط الكرامة</p>
             <div className="flex items-center gap-6 mt-4 text-xs">
               <Link href="/about" className="hover:text-white transition-colors">من نحن</Link>
-              <Link href="/track" className="hover:text-white transition-colors">تتبع طلب</Link>
+              <Link href="/org" className="hover:text-white transition-colors">المواكبة الإنسانية</Link>
               <Link href="/citizen/new-request" className="hover:text-white transition-colors">تسجيل وضع</Link>
             </div>
             <div className="border-t border-gray-800 mt-8 pt-6 w-full text-center">
