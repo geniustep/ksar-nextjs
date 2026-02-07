@@ -74,6 +74,7 @@ export default function LoginPage() {
   React.useEffect(() => {
     if (user) {
       switch (user.role) {
+        case 'superadmin':
         case 'admin':
           router.push('/admin');
           break;
@@ -208,16 +209,25 @@ export default function LoginPage() {
             </form>
           )}
 
-          <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-500 mb-2">
-              مواطن يريد تقديم طلب؟
-            </p>
-            <Link
-              href="/citizen-auth"
-              className="block text-sm text-accent-500 hover:text-accent-600 font-semibold"
-            >
-              ادخل برقم هاتفك مباشرة
-            </Link>
+          <div className="mt-6 pt-5 border-t border-gray-100 text-center space-y-3">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">مواطن يريد تقديم طلب؟</p>
+              <Link
+                href="/citizen-auth"
+                className="block text-sm text-accent-500 hover:text-accent-600 font-semibold"
+              >
+                ادخل برقم هاتفك مباشرة
+              </Link>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">مؤسسة أو جمعية؟</p>
+              <Link
+                href="/org-auth"
+                className="block text-sm text-primary-500 hover:text-primary-600 font-semibold"
+              >
+                دخول المؤسسات
+              </Link>
+            </div>
           </div>
         </div>
 

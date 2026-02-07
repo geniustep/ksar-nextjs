@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Card, CardTitle } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -27,6 +27,9 @@ export default function AdminInspectorsPage() {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [displayCode, setDisplayCode] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [displayPhone, setDisplayPhone] = useState('');
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [fullInfoCopied, setFullInfoCopied] = useState(false);
 
   useEffect(() => {
     loadInspectors();
@@ -55,14 +58,15 @@ export default function AdminInspectorsPage() {
         phone: newPhone,
       });
       setShowCreateModal(false);
-      setNewName('');
-      setNewPhone('');
 
       // Show the code
       setDisplayCode(res.access_code);
       setDisplayName(res.inspector.full_name);
+      setDisplayPhone(newPhone);
       setShowCodeModal(true);
 
+      setNewName('');
+      setNewPhone('');
       await loadInspectors();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -91,6 +95,7 @@ export default function AdminInspectorsPage() {
       const res = await adminApi.regenerateInspectorCode(inspector.id);
       setDisplayCode(res.access_code);
       setDisplayName(inspector.full_name);
+      setDisplayPhone(inspector.phone || '');
       setShowCodeModal(true);
     } catch (err) {
       if (err instanceof ApiError) alert(err.detail);
@@ -107,8 +112,17 @@ export default function AdminInspectorsPage() {
     }
   };
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(displayCode);
+  const copyCode = async () => {
+    await navigator.clipboard.writeText(displayCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
+  const copyFullInfo = async () => {
+    const text = `المراقب: ${displayName}\nرقم الهاتف: ${displayPhone}\nكود الدخول: ${displayCode}\n\nرابط الدخول: ${window.location.origin}/login (وضع الهاتف)`;
+    await navigator.clipboard.writeText(text);
+    setFullInfoCopied(true);
+    setTimeout(() => setFullInfoCopied(false), 2000);
   };
 
   return (
@@ -246,31 +260,47 @@ export default function AdminInspectorsPage() {
       </Modal>
 
       {/* Code Display Modal */}
-      <Modal isOpen={showCodeModal} onClose={() => setShowCodeModal(false)} title="كود الدخول">
+      <Modal isOpen={showCodeModal} onClose={() => { setShowCodeModal(false); setCodeCopied(false); setFullInfoCopied(false); }} title="بيانات الدخول">
         <div className="text-center">
           <div className="text-4xl mb-4">🔑</div>
-          <p className="text-gray-500 mb-6">
-            كود الدخول لـ <span className="font-bold">{displayName}</span>
+          <p className="text-gray-500 mb-2">
+            بيانات الدخول لـ <span className="font-bold">{displayName}</span>
           </p>
+          {displayPhone && (
+            <p className="text-sm text-gray-400 mb-6" dir="ltr">{displayPhone}</p>
+          )}
 
-          <div className="bg-primary-50 border-2 border-primary-200 rounded-2xl p-6 mb-6">
+          <div className="bg-primary-50 border-2 border-primary-200 rounded-2xl p-6 mb-4">
+            <p className="text-xs text-gray-500 mb-2">كود الدخول</p>
             <p className="text-4xl font-mono font-bold text-primary-700 tracking-[0.5em]" dir="ltr">
               {displayCode}
             </p>
           </div>
 
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-sm text-right">
+            <p className="text-gray-500 mb-1">رابط الدخول:</p>
+            <p className="text-primary-600 font-inter" dir="ltr">
+              {typeof window !== 'undefined' ? window.location.origin : ''}/login
+            </p>
+            <p className="text-xs text-gray-400 mt-1">يختار وضع &quot;الدخول بالهاتف&quot;</p>
+          </div>
+
           <p className="text-sm text-orange-600 bg-orange-50 p-3 rounded-xl mb-6">
-            احفظ هذا الكود! لن يظهر مرة أخرى. يمكنك إعادة توليد كود جديد في أي وقت.
+            احفظ هذه البيانات! لن يظهر الكود مرة أخرى. يمكنك إعادة توليد كود جديد في أي وقت.
           </p>
 
           <div className="flex gap-3">
             <Button className="flex-1" onClick={copyCode}>
-              نسخ الكود
+              {codeCopied ? 'تم النسخ!' : 'نسخ الكود'}
             </Button>
-            <Button variant="ghost" onClick={() => setShowCodeModal(false)}>
-              إغلاق
+            <Button variant="secondary" className="flex-1" onClick={copyFullInfo}>
+              {fullInfoCopied ? 'تم النسخ!' : 'نسخ كل البيانات'}
             </Button>
           </div>
+
+          <Button variant="ghost" className="mt-3 w-full" onClick={() => { setShowCodeModal(false); setCodeCopied(false); setFullInfoCopied(false); }}>
+            إغلاق
+          </Button>
         </div>
       </Modal>
     </DashboardLayout>

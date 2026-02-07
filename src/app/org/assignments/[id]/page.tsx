@@ -156,7 +156,11 @@ export default function AssignmentDetailPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">الهاتف</span>
-              <span dir="ltr">{request.requester_phone}</span>
+              {request.requester_phone ? (
+                <span dir="ltr">{request.requester_phone}</span>
+              ) : (
+                <span className="text-gray-400 text-sm">غير مسموح بالعرض</span>
+              )}
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">الكمية</span>

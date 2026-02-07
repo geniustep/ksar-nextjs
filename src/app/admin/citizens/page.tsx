@@ -1,0 +1,230 @@
+'use client';
+
+import React, { useEffect, useState, useCallback } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { Card } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Spinner from '@/components/ui/Spinner';
+import { adminApi, ApiError } from '@/lib/api';
+import type { CitizenListItem } from '@/lib/types';
+
+export default function AdminCitizensPage() {
+  const [citizens, setCitizens] = useState<CitizenListItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const limit = 20;
+
+  const loadCitizens = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await adminApi.getCitizens({
+        status: statusFilter || undefined,
+        search: searchQuery || undefined,
+        page,
+        limit,
+      });
+      setCitizens(res.items);
+      setTotal(res.total);
+    } catch (err) {
+      console.error('Failed to load citizens:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter, searchQuery, page]);
+
+  useEffect(() => {
+    loadCitizens();
+  }, [loadCitizens]);
+
+  const handleStatusChange = async (citizenId: string, newStatus: string) => {
+    try {
+      await adminApi.updateCitizenStatus(citizenId, newStatus);
+      await loadCitizens();
+    } catch (err) {
+      if (err instanceof ApiError) alert(err.detail);
+    }
+  };
+
+  const handleDelete = async (citizen: CitizenListItem) => {
+    if (!confirm(`هل أنت متأكد من حذف المواطن ${citizen.full_name}؟`)) return;
+    try {
+      await adminApi.deleteCitizen(citizen.id);
+      await loadCitizens();
+    } catch (err) {
+      if (err instanceof ApiError) alert(err.detail);
+    }
+  };
+
+  const totalPages = Math.ceil(total / limit);
+
+  return (
+    <DashboardLayout>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-neutral-dark">المواطنون</h1>
+        <p className="text-gray-500 mt-1">إدارة حسابات المواطنين ومتابعة حالاتهم</p>
+      </div>
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Input
+            label="بحث"
+            placeholder="اسم أو رقم هاتف..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+          />
+          <Select
+            label="الحالة"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            placeholder="جميع الحالات"
+            options={[
+              { value: 'active', label: 'نشط' },
+              { value: 'pending', label: 'معلق' },
+              { value: 'suspended', label: 'معطل' },
+            ]}
+          />
+          <div className="flex items-end">
+            <p className="text-sm text-gray-500">{total} مواطن</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Citizens Table */}
+      <Card>
+        {loading ? (
+          <div className="flex justify-center py-12"><Spinner /></div>
+        ) : citizens.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <p className="text-4xl mb-2">👥</p>
+            <p>لا يوجد مواطنون</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">الاسم</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">الهاتف</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">الحالة</th>
+                  <th className="text-center py-3 px-3 text-gray-500 font-medium">الطلبات</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">المراقب المسؤول</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">التسجيل</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">آخر دخول</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {citizens.map((citizen) => (
+                  <tr key={citizen.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                    <td className="py-3 px-3 font-medium">{citizen.full_name}</td>
+                    <td className="py-3 px-3 text-gray-600" dir="ltr">{citizen.phone}</td>
+                    <td className="py-3 px-3">
+                      <Badge className={
+                        citizen.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : citizen.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                      }>
+                        {citizen.status === 'active' ? 'نشط' : citizen.status === 'pending' ? 'معلق' : 'معطل'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <Badge className={
+                        citizen.total_requests > 3
+                          ? 'bg-orange-100 text-orange-800'
+                          : citizen.total_requests > 0
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-600'
+                      }>
+                        {citizen.total_requests}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-3 text-gray-500 text-xs">
+                      {citizen.supervisor_name || '-'}
+                    </td>
+                    <td className="py-3 px-3 text-gray-500 text-xs">
+                      {new Date(citizen.created_at).toLocaleDateString('ar-MA')}
+                    </td>
+                    <td className="py-3 px-3 text-gray-500 text-xs">
+                      {citizen.last_login
+                        ? new Date(citizen.last_login).toLocaleString('ar-MA')
+                        : '-'}
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="flex gap-1 flex-wrap">
+                        {citizen.status === 'pending' && (
+                          <button
+                            onClick={() => handleStatusChange(citizen.id, 'active')}
+                            className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded-lg transition-colors"
+                          >
+                            تفعيل
+                          </button>
+                        )}
+                        {citizen.status === 'active' && (
+                          <button
+                            onClick={() => handleStatusChange(citizen.id, 'suspended')}
+                            className="text-xs bg-orange-50 text-orange-700 hover:bg-orange-100 px-2 py-1 rounded-lg transition-colors"
+                          >
+                            تعطيل
+                          </button>
+                        )}
+                        {citizen.status === 'suspended' && (
+                          <button
+                            onClick={() => handleStatusChange(citizen.id, 'active')}
+                            className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded-lg transition-colors"
+                          >
+                            تفعيل
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(citizen)}
+                          className="text-xs bg-red-50 text-red-700 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors"
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            السابق
+          </Button>
+          <span className="text-sm text-gray-500">
+            صفحة {page} من {totalPages}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
+            التالي
+          </Button>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+}

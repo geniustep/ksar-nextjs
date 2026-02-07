@@ -17,10 +17,12 @@ import {
   CATEGORY_ICONS,
 } from '@/lib/constants';
 import type { InspectorRequestResponse, OrganizationBrief, RequestCategory } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function InspectorRequestDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const requestId = params.id as string;
 
   const [request, setRequest] = useState<InspectorRequestResponse | null>(null);
@@ -30,13 +32,21 @@ export default function InspectorRequestDetailPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Phone request count
+  const [phoneRequestCount, setPhoneRequestCount] = useState<number | null>(null);
+
   // Form state
   const [inspectorNotes, setInspectorNotes] = useState('');
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
+  const [allowPhoneAccess, setAllowPhoneAccess] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const [showAssignOrgForm, setShowAssignOrgForm] = useState(false);
+  const [assignOrgId, setAssignOrgId] = useState('');
+  const [assignOrgPhoneAccess, setAssignOrgPhoneAccess] = useState(false);
+  const [assignOrgNotes, setAssignOrgNotes] = useState('');
 
   useEffect(() => {
     loadData();
@@ -51,6 +61,16 @@ export default function InspectorRequestDetailPage() {
       setRequest(reqRes);
       setOrganizations(orgsRes.items);
       setInspectorNotes(reqRes.inspector_notes || '');
+
+      // Load phone request count
+      if (reqRes.requester_phone) {
+        try {
+          const countRes = await inspectorApi.getPhoneRequestCount(reqRes.requester_phone);
+          setPhoneRequestCount(countRes.count);
+        } catch {
+          // Silently handle
+        }
+      }
     } catch (err) {
       console.error('Failed to load request:', err);
       setError('فشل في تحميل بيانات الطلب');
@@ -65,7 +85,7 @@ export default function InspectorRequestDetailPage() {
     setSuccess('');
     try {
       await inspectorApi.activateRequest(requestId, inspectorNotes || undefined);
-      setSuccess('تم تفعيل الطلب بنجاح');
+      setSuccess('تم تفعيل الطلب بنجاح - أصبحت المراقب المسؤول عن هذا الطلب');
       await loadData();
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail);
@@ -107,6 +127,35 @@ export default function InspectorRequestDetailPage() {
       });
       setSuccess('تم ربط الطلب بالجمعية بنجاح');
       setShowAssignForm(false);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAssignCitizenToOrg = async () => {
+    if (!assignOrgId) {
+      setError('يرجى اختيار جمعية');
+      return;
+    }
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await inspectorApi.assignCitizenToOrg(requestId, {
+        organization_id: assignOrgId,
+        allow_phone_access: assignOrgPhoneAccess,
+        notes: assignOrgNotes || undefined,
+      });
+      setSuccess(
+        assignOrgPhoneAccess
+          ? 'تم إضافة المواطن للجمعية مع السماح برؤية رقم الهاتف'
+          : 'تم إضافة المواطن للجمعية (رقم الهاتف مخفي)'
+      );
+      setShowAssignOrgForm(false);
       await loadData();
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail);
@@ -178,6 +227,7 @@ export default function InspectorRequestDetailPage() {
   const canReject = request.status === 'pending';
   const canAssign = request.status === 'pending' || request.status === 'new';
   const canDelete = request.status === 'pending' || request.status === 'new' || request.status === 'rejected' || request.status === 'cancelled';
+  const isSupervisor = request.inspector_id === user?.id;
 
   return (
     <DashboardLayout>
@@ -192,9 +242,14 @@ export default function InspectorRequestDetailPage() {
           </button>
           <h1 className="text-2xl font-bold text-neutral-dark">تفاصيل الطلب</h1>
         </div>
-        <Badge className={`${REQUEST_STATUS_COLORS[request.status]} text-base px-4 py-1`}>
-          {REQUEST_STATUS_LABELS[request.status]}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isSupervisor && (
+            <Badge className="bg-indigo-100 text-indigo-800">أنت المراقب المسؤول</Badge>
+          )}
+          <Badge className={`${REQUEST_STATUS_COLORS[request.status]} text-base px-4 py-1`}>
+            {REQUEST_STATUS_LABELS[request.status]}
+          </Badge>
+        </div>
       </div>
 
       {/* Messages */}
@@ -222,7 +277,20 @@ export default function InspectorRequestDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">رقم الهاتف</p>
-                <p className="font-medium" dir="ltr">{request.requester_phone}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium" dir="ltr">{request.requester_phone}</p>
+                  {phoneRequestCount !== null && (
+                    <Badge className={
+                      phoneRequestCount > 3
+                        ? 'bg-orange-100 text-orange-800'
+                        : phoneRequestCount > 1
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-600'
+                    }>
+                      {phoneRequestCount} طلب
+                    </Badge>
+                  )}
+                </div>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">التصنيف</p>
@@ -249,6 +317,18 @@ export default function InspectorRequestDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Supervisor Info */}
+            {request.inspector_id && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">المراقب المسؤول:</span>
+                  <Badge className="bg-indigo-50 text-indigo-700">
+                    {isSupervisor ? 'أنت' : `مراقب #${request.inspector_id.slice(0, 8)}`}
+                  </Badge>
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* Description */}
@@ -350,7 +430,7 @@ export default function InspectorRequestDetailPage() {
                   onClick={handleActivate}
                   loading={actionLoading}
                 >
-                  تفعيل الطلب
+                  تفعيل الطلب (أصبح المراقب المسؤول)
                 </Button>
               )}
 
@@ -361,6 +441,17 @@ export default function InspectorRequestDetailPage() {
                   onClick={() => setShowAssignForm(!showAssignForm)}
                 >
                   ربط بجمعية
+                </Button>
+              )}
+
+              {/* Assign citizen to organization */}
+              {(request.status === 'new' || request.status === 'assigned' || request.status === 'in_progress') && (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => setShowAssignOrgForm(!showAssignOrgForm)}
+                >
+                  إضافة المواطن لجمعية
                 </Button>
               )}
 
@@ -387,7 +478,7 @@ export default function InspectorRequestDetailPage() {
             </div>
           </Card>
 
-          {/* Assign Form */}
+          {/* Assign to organization (existing flow) */}
           {showAssignForm && (
             <Card>
               <CardTitle>ربط بجمعية</CardTitle>
@@ -411,6 +502,16 @@ export default function InspectorRequestDetailPage() {
                   rows={3}
                 />
 
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allowPhoneAccess}
+                    onChange={(e) => setAllowPhoneAccess(e.target.checked)}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-gray-600">السماح للجمعية برؤية رقم الهاتف</span>
+                </label>
+
                 <div className="flex gap-2">
                   <Button
                     className="flex-1"
@@ -422,6 +523,70 @@ export default function InspectorRequestDetailPage() {
                   <Button
                     variant="ghost"
                     onClick={() => setShowAssignForm(false)}
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Assign citizen to organization (new flow) */}
+          {showAssignOrgForm && (
+            <Card>
+              <CardTitle>إضافة المواطن لجمعية</CardTitle>
+              <div className="space-y-4 mt-4">
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-sm text-blue-700">
+                  إضافة هذا المواطن لجمعية معينة للتكفل به. يمكنك التحكم في إظهار رقم الهاتف.
+                </div>
+
+                <Select
+                  label="اختر الجمعية"
+                  value={assignOrgId}
+                  onChange={(e) => setAssignOrgId(e.target.value)}
+                  placeholder="-- اختر جمعية --"
+                  options={organizations.map((org) => ({
+                    value: org.id,
+                    label: `${org.name} (${org.total_completed} مكتمل)`,
+                  }))}
+                />
+
+                <label className="flex items-center gap-2 cursor-pointer p-3 bg-orange-50 border border-orange-100 rounded-xl">
+                  <input
+                    type="checkbox"
+                    checked={assignOrgPhoneAccess}
+                    onChange={(e) => setAssignOrgPhoneAccess(e.target.checked)}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">السماح برؤية رقم الهاتف</span>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {assignOrgPhoneAccess
+                        ? 'الجمعية ستتمكن من رؤية رقم هاتف المواطن'
+                        : 'رقم الهاتف سيكون مخفي عن الجمعية'}
+                    </p>
+                  </div>
+                </label>
+
+                <Textarea
+                  label="ملاحظات (اختياري)"
+                  placeholder="ملاحظات حول الإضافة..."
+                  value={assignOrgNotes}
+                  onChange={(e) => setAssignOrgNotes(e.target.value)}
+                  rows={3}
+                />
+
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    onClick={handleAssignCitizenToOrg}
+                    loading={actionLoading}
+                  >
+                    تأكيد الإضافة
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAssignOrgForm(false)}
                   >
                     إلغاء
                   </Button>

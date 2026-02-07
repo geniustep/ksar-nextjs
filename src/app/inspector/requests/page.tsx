@@ -42,6 +42,9 @@ function InspectorRequestsContent() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Phone request counts
+  const [phoneCounts, setPhoneCounts] = useState<Record<string, number>>({});
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>(initialStatus || '');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
@@ -63,6 +66,21 @@ function InspectorRequestsContent() {
       });
       setRequests(res.items);
       setTotal(res.total);
+
+      // Load phone counts for unique phone numbers
+      const uniquePhones = Array.from(new Set(res.items.map(r => r.requester_phone)));
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        uniquePhones.map(async (phone) => {
+          try {
+            const countRes = await inspectorApi.getPhoneRequestCount(phone);
+            counts[phone] = countRes.count;
+          } catch {
+            // Silently handle - count won't show
+          }
+        })
+      );
+      setPhoneCounts(counts);
     } catch (err) {
       console.error('Failed to load requests:', err);
     } finally {
@@ -169,6 +187,7 @@ function InspectorRequestsContent() {
                   <tr className="border-b border-gray-100">
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">الاسم</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">الهاتف</th>
+                    <th className="text-center py-3 px-2 text-gray-500 font-medium">طلبات</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">التصنيف</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">المنطقة</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">الحالة</th>
@@ -185,6 +204,21 @@ function InspectorRequestsContent() {
                         </Link>
                       </td>
                       <td className="py-3 px-2 text-gray-600" dir="ltr">{req.requester_phone}</td>
+                      <td className="py-3 px-2 text-center">
+                        {phoneCounts[req.requester_phone] !== undefined ? (
+                          <Badge className={
+                            phoneCounts[req.requester_phone] > 3
+                              ? 'bg-orange-100 text-orange-800'
+                              : phoneCounts[req.requester_phone] > 1
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-600'
+                          }>
+                            {phoneCounts[req.requester_phone]}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
                       <td className="py-3 px-2">
                         {CATEGORY_LABELS[req.category as RequestCategory] || req.category}
                       </td>

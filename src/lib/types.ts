@@ -1,6 +1,6 @@
 // === Enums ===
 
-export type UserRole = 'admin' | 'organization' | 'citizen' | 'inspector';
+export type UserRole = 'admin' | 'superadmin' | 'organization' | 'citizen' | 'inspector';
 export type UserStatus = 'active' | 'suspended';
 
 export type RequestCategory =
@@ -451,4 +451,74 @@ export interface OrganizationBrief {
   service_types: string[];
   coverage_areas: string[];
   total_completed: number;
+}
+
+// === Organization Management (Admin) ===
+
+export interface OrganizationCreateRequest {
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  region?: string;
+  description?: string;
+}
+
+export interface OrganizationCreatedResponse {
+  message: string;
+  organization: AdminOrgListItem;
+  access_code: string;
+}
+
+export interface OrganizationLoginRequest {
+  phone: string;
+  code: string;
+}
+
+export interface OrganizationLoginResponse {
+  access_token: string;
+  token_type: string;
+  user: UserResponse;
+}
+
+// === Request with phone count ===
+
+export interface RequestWithPhoneCount extends RequestResponse {
+  phone_request_count?: number;
+}
+
+// === Inspector request with supervisor info ===
+
+export interface InspectorRequestWithSupervisor extends InspectorRequestResponse {
+  supervisor_id?: string | null;
+  supervisor_name?: string | null;
+  phone_request_count?: number;
+}
+
+// === Organization access control ===
+
+export interface OrgAccessRequest {
+  request_id: string;
+  organization_id: string;
+  allow_phone_access: boolean;
+}
+
+export interface OrgAccessResponse {
+  message: string;
+}
+
+// === Citizens Management ===
+
+export interface CitizenListItem {
+  id: string;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  status: string;
+  created_at: string;
+  last_login: string | null;
+  total_requests: number;
+  supervisor_id: string | null;
+  supervisor_name: string | null;
 }

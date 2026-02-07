@@ -48,6 +48,13 @@ import type {
   InspectorCreatedResponse,
   InspectorListResponse,
   OrganizationBrief,
+  OrganizationCreateRequest,
+  OrganizationCreatedResponse,
+  OrganizationLoginRequest,
+  OrganizationLoginResponse,
+  OrgAccessRequest,
+  OrgAccessResponse,
+  CitizenListItem,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ksar.geniura.com';
@@ -404,6 +411,76 @@ export const adminApi = {
       method: 'DELETE',
     });
   },
+
+  // === Organization Management ===
+
+  createOrganization(data: OrganizationCreateRequest): Promise<OrganizationCreatedResponse> {
+    return request('/api/v1/admin/organizations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  regenerateOrgCode(orgId: string): Promise<{ message: string; access_code: string }> {
+    return request(`/api/v1/admin/organizations/${orgId}/regenerate-code`, {
+      method: 'POST',
+    });
+  },
+
+  deleteOrganization(orgId: string): Promise<{ message: string }> {
+    return request(`/api/v1/admin/organizations/${orgId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // === Organization phone access control ===
+
+  updateOrgPhoneAccess(data: OrgAccessRequest): Promise<OrgAccessResponse> {
+    return request('/api/v1/admin/org-access', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // === Citizens Management ===
+
+  getCitizens(params?: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ items: CitizenListItem[]; total: number }> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    return request(`/api/v1/admin/citizens${qs ? '?' + qs : ''}`);
+  },
+
+  updateCitizenStatus(citizenId: string, status: string): Promise<{ message: string }> {
+    return request(`/api/v1/admin/citizens/${citizenId}/status?status=${status}`, {
+      method: 'PATCH',
+    });
+  },
+
+  deleteCitizen(citizenId: string): Promise<{ message: string }> {
+    return request(`/api/v1/admin/citizens/${citizenId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// === Organization Auth API ===
+
+export const orgAuthApi = {
+  login(data: OrganizationLoginRequest): Promise<OrganizationLoginResponse> {
+    return request('/api/v1/auth/org-login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // === Inspector API ===
@@ -483,6 +560,17 @@ export const inspectorApi = {
 
   getOrganizations(): Promise<{ items: OrganizationBrief[] }> {
     return request('/api/v1/inspector/organizations');
+  },
+
+  assignCitizenToOrg(requestId: string, data: { organization_id: string; allow_phone_access?: boolean; notes?: string }): Promise<{ message: string }> {
+    return request(`/api/v1/inspector/requests/${requestId}/assign-org`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getPhoneRequestCount(phone: string): Promise<{ phone: string; count: number }> {
+    return request(`/api/v1/inspector/phone-count?phone=${encodeURIComponent(phone)}`);
   },
 };
 

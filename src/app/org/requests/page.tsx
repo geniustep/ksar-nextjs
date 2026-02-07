@@ -134,6 +134,11 @@ export default function OrgRequestsPage() {
                     <p className="text-gray-700 text-sm line-clamp-2 mb-2">{req.description}</p>
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                       <span>{req.requester_name}</span>
+                      {req.requester_phone ? (
+                        <span dir="ltr">{req.requester_phone}</span>
+                      ) : (
+                        <span className="text-orange-400">الهاتف مخفي</span>
+                      )}
                       {req.city && <span>{req.city}</span>}
                       {req.region && <span>{req.region}</span>}
                       <span>أفراد الأسرة: {req.family_members}</span>

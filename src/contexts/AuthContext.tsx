@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { UserResponse, LoginRequest, RegisterRequest, OtpVerifyResponse, InspectorLoginResponse } from '@/lib/types';
+import type { UserResponse, LoginRequest, RegisterRequest, OtpVerifyResponse, InspectorLoginResponse, OrganizationLoginResponse } from '@/lib/types';
 import { authApi, ApiError } from '@/lib/api';
 
 interface AuthState {
@@ -15,6 +15,7 @@ interface AuthContextType extends AuthState {
   register: (data: RegisterRequest) => Promise<void>;
   loginWithOtp: (otpResponse: OtpVerifyResponse) => void;
   loginAsInspector: (response: InspectorLoginResponse) => void;
+  loginAsOrganization: (response: OrganizationLoginResponse) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -89,13 +90,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const loginAsOrganization = (response: OrganizationLoginResponse) => {
+    localStorage.setItem('access_token', response.access_token);
+    setState({
+      user: response.user,
+      isLoading: false,
+      isAuthenticated: true,
+    });
+  };
+
   const logout = () => {
     localStorage.removeItem('access_token');
     setState({ user: null, isLoading: false, isAuthenticated: false });
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, loginWithOtp, loginAsInspector, logout, refreshUser }}>
+    <AuthContext.Provider value={{ ...state, login, register, loginWithOtp, loginAsInspector, loginAsOrganization, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

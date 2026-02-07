@@ -19,6 +19,7 @@ export default function Navbar() {
   const getDashboardLink = () => {
     if (!user) return '/login';
     switch (user.role) {
+      case 'superadmin':
       case 'admin':
         return '/admin';
       case 'inspector':
