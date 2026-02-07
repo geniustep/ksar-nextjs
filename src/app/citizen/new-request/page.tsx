@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { Suspense, useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -75,7 +75,7 @@ const ALL_CATEGORIES: AllCategories = [
   'blankets', 'baby_supplies', 'hygiene', 'financial', 'other',
 ];
 
-export default function NewRequestPage() {
+function NewRequestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -2088,5 +2088,20 @@ export default function NewRequestPage() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function NewRequestPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-neutral-light flex flex-col items-center justify-center">
+          <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+          <p className="mt-4 text-gray-500 text-sm">جاري التحميل...</p>
+        </div>
+      }
+    >
+      <NewRequestContent />
+    </Suspense>
   );
 }

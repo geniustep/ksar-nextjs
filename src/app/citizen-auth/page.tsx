@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,7 +10,7 @@ import { otpApi, ApiError } from '@/lib/api';
 
 type Step = 'phone' | 'otp' | 'success';
 
-export default function CitizenAuthPage() {
+function CitizenAuthContent() {
   const { loginWithOtp, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -327,5 +327,20 @@ export default function CitizenAuthPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CitizenAuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-neutral-light flex flex-col items-center justify-center">
+          <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+          <p className="mt-4 text-gray-500 text-sm">جاري التحميل...</p>
+        </div>
+      }
+    >
+      <CitizenAuthContent />
+    </Suspense>
   );
 }
