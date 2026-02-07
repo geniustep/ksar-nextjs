@@ -7,23 +7,56 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { ApiError } from '@/lib/api';
+import { ApiError, inspectorApi } from '@/lib/api';
+import { cn } from '@/lib/utils';
+
+type LoginMode = 'email' | 'phone';
 
 export default function LoginPage() {
-  const { login, user } = useAuth();
+  const { login, loginAsInspector, user } = useAuth();
   const router = useRouter();
+
+  const [mode, setMode] = useState<LoginMode>('email');
+
+  // Email login
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Phone login (inspector)
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
       await login({ email, password });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.detail);
+      } else {
+        setError('خطأ في الاتصال بالخادم');
+      }
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+  };
+
+  const handlePhoneLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await inspectorApi.login({ phone, code });
+      loginAsInspector(response);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.detail);
@@ -58,7 +91,7 @@ export default function LoginPage() {
   }, [user, router]);
 
   return (
-    <div className="min-h-screen bg-neutral-light flex flex-col items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-neutral-light flex flex-col items-center justify-center py-12 px-4" dir="rtl">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-2">
@@ -77,40 +110,106 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl">
-                {error}
-              </div>
-            )}
+          {/* Mode Tabs */}
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => { setMode('email'); setError(''); }}
+              className={cn(
+                'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all',
+                mode === 'email'
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              )}
+            >
+              بريد إلكتروني
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('phone'); setError(''); }}
+              className={cn(
+                'flex-1 py-2.5 text-sm font-medium rounded-lg transition-all',
+                mode === 'phone'
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              )}
+            >
+              رقم الهاتف (مراقب)
+            </button>
+          </div>
 
-            <Input
-              label="البريد الإلكتروني"
-              type="email"
-              placeholder="example@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              dir="ltr"
-            />
+          {/* Error */}
+          {error && (
+            <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl mb-5">
+              {error}
+            </div>
+          )}
 
-            <Input
-              label="كلمة المرور"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              dir="ltr"
-            />
+          {/* Email Login Form */}
+          {mode === 'email' && (
+            <form onSubmit={handleEmailLogin} className="space-y-5">
+              <Input
+                label="البريد الإلكتروني"
+                type="email"
+                placeholder="example@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                dir="ltr"
+              />
 
-            <Button type="submit" className="w-full" loading={loading}>
-              دخول
-            </Button>
-          </form>
+              <Input
+                label="كلمة المرور"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                dir="ltr"
+              />
 
-          <div className="mt-6 pt-5 border-t border-gray-100 space-y-3 text-center">
-            <p className="text-sm text-gray-500">
+              <Button type="submit" className="w-full" loading={loading}>
+                دخول
+              </Button>
+            </form>
+          )}
+
+          {/* Phone Login Form (Inspector) */}
+          {mode === 'phone' && (
+            <form onSubmit={handlePhoneLogin} className="space-y-5">
+              <Input
+                label="رقم الهاتف"
+                type="tel"
+                placeholder="06XXXXXXXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                dir="ltr"
+              />
+
+              <Input
+                label="كود الدخول"
+                type="text"
+                placeholder="XXXXXX"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+                dir="ltr"
+                maxLength={6}
+              />
+
+              <Button type="submit" className="w-full" loading={loading}>
+                دخول
+              </Button>
+
+              <p className="text-xs text-gray-400 text-center">
+                كود الدخول يُقدم من الإدارة
+              </p>
+            </form>
+          )}
+
+          <div className="mt-6 pt-5 border-t border-gray-100 text-center">
+            <p className="text-sm text-gray-500 mb-2">
               مواطن يريد تقديم طلب؟
             </p>
             <Link
@@ -118,12 +217,6 @@ export default function LoginPage() {
               className="block text-sm text-accent-500 hover:text-accent-600 font-semibold"
             >
               ادخل برقم هاتفك مباشرة
-            </Link>
-            <Link
-              href="/inspector-auth"
-              className="block text-sm text-gray-400 hover:text-primary-600"
-            >
-              دخول المراقب
             </Link>
           </div>
         </div>
