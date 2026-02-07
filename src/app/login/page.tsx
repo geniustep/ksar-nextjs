@@ -221,12 +221,21 @@ export default function LoginPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">مؤسسة أو جمعية؟</p>
-              <Link
-                href="/org-auth"
-                className="block text-sm text-primary-500 hover:text-primary-600 font-semibold"
-              >
-                دخول المؤسسات
-              </Link>
+              <div className="flex items-center justify-center gap-3">
+                <Link
+                  href="/org-auth"
+                  className="text-sm text-primary-500 hover:text-primary-600 font-semibold"
+                >
+                  دخول المؤسسات
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link
+                  href="/org-register"
+                  className="text-sm text-green-600 hover:text-green-700 font-semibold"
+                >
+                  إنشاء مؤسسة جديدة
+                </Link>
+              </div>
             </div>
           </div>
         </div>
