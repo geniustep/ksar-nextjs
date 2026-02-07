@@ -195,6 +195,21 @@ export const publicApi = {
   getCategories(): Promise<Record<string, string>> {
     return request('/api/v1/public/categories');
   },
+
+  registerOrganization(data: {
+    name: string;
+    phone: string;
+    email?: string;
+    description?: string;
+    city?: string;
+    region?: string;
+    responsible_name?: string;
+  }): Promise<{ message: string; organization_name: string }> {
+    return request('/api/v1/public/org-register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // === Citizen API ===
