@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { Suspense, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -21,6 +21,18 @@ import {
 import type { RequestResponse, RequestStatus, RequestCategory } from '@/lib/types';
 
 export default function InspectorRequestsPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout>
+        <div className="flex justify-center py-12"><Spinner /></div>
+      </DashboardLayout>
+    }>
+      <InspectorRequestsContent />
+    </Suspense>
+  );
+}
+
+function InspectorRequestsContent() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get('status') as RequestStatus | null;
 
