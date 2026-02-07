@@ -17,17 +17,17 @@ const PENDING_REQUEST_KEY = 'pending_request_data';
 
 // Steps for authenticated users (5 steps)
 const STEPS_AUTH = [
-  { id: 1, title: 'نوع المساعدة', icon: '📋' },
-  { id: 2, title: 'تفاصيل الطلب', icon: '✏️' },
+  { id: 1, title: 'تحديد الوضع', icon: '🕊️' },
+  { id: 2, title: 'تفاصيل الوضع', icon: '✏️' },
   { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
   { id: 4, title: 'الموقع', icon: '📍' },
-  { id: 5, title: 'مراجعة وإرسال', icon: '✅' },
+  { id: 5, title: 'مراجعة وتأكيد', icon: '✅' },
 ];
 
 // Steps for guest users (6 steps - includes phone registration)
 const STEPS_GUEST = [
-  { id: 1, title: 'نوع المساعدة', icon: '📋' },
-  { id: 2, title: 'تفاصيل الطلب', icon: '✏️' },
+  { id: 1, title: 'تحديد الوضع', icon: '🕊️' },
+  { id: 2, title: 'تفاصيل الوضع', icon: '✏️' },
   { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
   { id: 4, title: 'الموقع', icon: '📍' },
   { id: 5, title: 'مراجعة', icon: '✅' },
@@ -36,11 +36,11 @@ const STEPS_GUEST = [
 
 // Legacy - for backward compatibility
 const STEPS = [
-  { id: 1, title: 'نوع المساعدة', icon: '📋' },
-  { id: 2, title: 'تفاصيل الطلب', icon: '✏️' },
+  { id: 1, title: 'تحديد الوضع', icon: '🕊️' },
+  { id: 2, title: 'تفاصيل الوضع', icon: '✏️' },
   { id: 3, title: 'معلومات الأسرة', icon: '👨‍👩‍👧‍👦' },
   { id: 4, title: 'الموقع', icon: '📍' },
-  { id: 5, title: 'مراجعة وإرسال', icon: '✅' },
+  { id: 5, title: 'مراجعة وتأكيد', icon: '✅' },
 ];
 
 const CATEGORY_COLORS: Record<RequestCategory, string> = {
@@ -67,10 +67,128 @@ const CATEGORY_BG_SELECTED: Record<RequestCategory, string> = {
   other: 'ring-gray-500 bg-gray-50',
 };
 
-type AllCategories = RequestCategory[];
-const ALL_CATEGORIES: AllCategories = [
-  'food', 'water', 'shelter', 'medicine', 'clothes',
-  'blankets', 'baby_supplies', 'hygiene', 'other',
+// Grouped humanitarian categories for step 1
+interface SubItem {
+  id: string;
+  label: string;
+}
+
+interface CategoryGroup {
+  id: string;
+  title: string;
+  icon: string;
+  apiCategory: RequestCategory;
+  iconBg: string;
+  selectedBg: string;
+  subItems: SubItem[];
+}
+
+const CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    id: 'housing',
+    title: 'السكن والاستقرار',
+    icon: '🏠',
+    apiCategory: 'shelter',
+    iconBg: 'bg-amber-100',
+    selectedBg: 'ring-amber-400 bg-amber-50 border-amber-200',
+    subItems: [
+      { id: 'temp_housing', label: 'سكن مؤقّت' },
+      { id: 'shelter_support', label: 'دعم الإيواء' },
+      { id: 'bedding', label: 'فراش وأغطية' },
+      { id: 'housing_essentials', label: 'مستلزمات السكن الأساسي' },
+    ],
+  },
+  {
+    id: 'daily_needs',
+    title: 'الاحتياجات اليومية',
+    icon: '🍽️',
+    apiCategory: 'food',
+    iconBg: 'bg-orange-100',
+    selectedBg: 'ring-orange-400 bg-orange-50 border-orange-200',
+    subItems: [
+      { id: 'basic_food', label: 'مواد غذائية أساسية' },
+      { id: 'clean_water', label: 'مياه صالحة للاستعمال' },
+      { id: 'cooking_supplies', label: 'مستلزمات الطبخ' },
+    ],
+  },
+  {
+    id: 'clothing',
+    title: 'الكساء والوقاية',
+    icon: '👕',
+    apiCategory: 'clothes',
+    iconBg: 'bg-purple-100',
+    selectedBg: 'ring-purple-400 bg-purple-50 border-purple-200',
+    subItems: [
+      { id: 'weather_clothes', label: 'ملابس مناسبة للطقس' },
+      { id: 'shoes', label: 'أحذية' },
+      { id: 'winter_clothes', label: 'أغطية وملابس شتوية' },
+    ],
+  },
+  {
+    id: 'hygiene',
+    title: 'الصحة والنظافة',
+    icon: '🧼',
+    apiCategory: 'hygiene',
+    iconBg: 'bg-teal-100',
+    selectedBg: 'ring-teal-400 bg-teal-50 border-teal-200',
+    subItems: [
+      { id: 'personal_hygiene', label: 'مستلزمات النظافة الشخصية' },
+      { id: 'sanitization', label: 'مواد تعقيم' },
+      { id: 'basic_health', label: 'احتياجات صحية أساسية' },
+    ],
+  },
+  {
+    id: 'healthcare',
+    title: 'الرعاية الصحية',
+    icon: '💊',
+    apiCategory: 'medicine',
+    iconBg: 'bg-red-100',
+    selectedBg: 'ring-red-400 bg-red-50 border-red-200',
+    subItems: [
+      { id: 'essential_meds', label: 'أدوية ضرورية' },
+      { id: 'medical_supplies', label: 'مستلزمات طبية' },
+      { id: 'health_followup', label: 'متابعة صحية' },
+    ],
+  },
+  {
+    id: 'family_children',
+    title: 'الأسرة والأطفال',
+    icon: '👶',
+    apiCategory: 'baby_supplies',
+    iconBg: 'bg-pink-100',
+    selectedBg: 'ring-pink-400 bg-pink-50 border-pink-200',
+    subItems: [
+      { id: 'child_supplies', label: 'مستلزمات الأطفال' },
+      { id: 'baby_milk', label: 'حليب وحاجيات الرضع' },
+      { id: 'school_supplies', label: 'لوازم مدرسية أساسية' },
+    ],
+  },
+  {
+    id: 'support',
+    title: 'المواكبة والدعم',
+    icon: '🤍',
+    apiCategory: 'other',
+    iconBg: 'bg-blue-100',
+    selectedBg: 'ring-blue-400 bg-blue-50 border-blue-200',
+    subItems: [
+      { id: 'humanitarian_support', label: 'مواكبة إنسانية' },
+      { id: 'social_support', label: 'دعم اجتماعي مؤقّت' },
+      { id: 'guidance', label: 'توجيه ومرافقة' },
+    ],
+  },
+  {
+    id: 'other_needs',
+    title: 'احتياجات أخرى',
+    icon: '📦',
+    apiCategory: 'other',
+    iconBg: 'bg-gray-100',
+    selectedBg: 'ring-gray-400 bg-gray-50 border-gray-200',
+    subItems: [
+      { id: 'special_need', label: 'احتياج خاص' },
+      { id: 'unclassified', label: 'وضع غير مصنّف' },
+      { id: 'explain_later', label: 'أمر أفضّل شرحه لاحقًا' },
+    ],
+  },
 ];
 
 function NewRequestContent() {
@@ -97,7 +215,12 @@ function NewRequestContent() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{ tracking_code: string; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  
+
+  // Grouped category selection state
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [selectedSubItems, setSelectedSubItems] = useState<string[]>([]);
+  const [specialNeedDescription, setSpecialNeedDescription] = useState('');
+
   // Phone registration state (for guest flow)
   const [phoneNumber, setPhoneNumber] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
@@ -414,9 +537,13 @@ function NewRequestContent() {
       localStorage.setItem('access_token', registerResult.access_token);
 
       // Step 3: Submit the request
+      const catDesc = buildCategoryDescription();
+      const fullDesc = [catDesc, form.description].filter(Boolean).join('\n\n');
+      const apiCat = getPrimaryApiCategory() || (form.category as RequestCategory);
+
       const result = await citizenApi.createRequest({
-        category: form.category as RequestCategory,
-        description: form.description || undefined,
+        category: apiCat,
+        description: fullDesc || undefined,
         quantity: parseInt(form.quantity) || 1,
         family_members: parseInt(form.family_members) || 1,
         address: form.address || undefined,
@@ -443,13 +570,11 @@ function NewRequestContent() {
   };
 
   const handleSubmit = async () => {
-    if (!form.category) {
-      setError('⚠️ يرجى اختيار نوع المساعدة أولاً');
+    if (selectedGroups.length === 0 && !form.category) {
+      setError('يرجى تحديد نوع الوضع أولاً');
       setStep(1);
       return;
     }
-    // Description is now optional - only validate if provided
-    // No validation for description anymore
 
     // If not authenticated, go to step 6 for phone registration
     if (!isAuthenticated) {
@@ -460,10 +585,15 @@ function NewRequestContent() {
     setError('');
     setLoading(true);
 
+    // Build enriched description with category selections
+    const catDesc = buildCategoryDescription();
+    const fullDescription = [catDesc, form.description].filter(Boolean).join('\n\n');
+    const apiCategory = getPrimaryApiCategory() || (form.category as RequestCategory);
+
     try {
       const result = await citizenApi.createRequest({
-        category: form.category as RequestCategory,
-        description: form.description,
+        category: apiCategory,
+        description: fullDescription,
         quantity: parseInt(form.quantity) || 1,
         family_members: parseInt(form.family_members) || 1,
         address: form.address || undefined,
@@ -507,6 +637,62 @@ function NewRequestContent() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  // ====== Category Group Toggle ======
+  const toggleGroup = useCallback((groupId: string) => {
+    setSelectedGroups((prev) => {
+      if (prev.includes(groupId)) {
+        // When deselecting a group, also remove its sub-items
+        const group = CATEGORY_GROUPS.find((g) => g.id === groupId);
+        if (group) {
+          const subItemIds = group.subItems.map((s) => s.id);
+          setSelectedSubItems((prevSubs) => prevSubs.filter((id) => !subItemIds.includes(id)));
+        }
+        return prev.filter((id) => id !== groupId);
+      } else {
+        return [...prev, groupId];
+      }
+    });
+    setError('');
+  }, []);
+
+  const toggleSubItem = useCallback((subItemId: string) => {
+    setSelectedSubItems((prev) => {
+      if (prev.includes(subItemId)) {
+        return prev.filter((id) => id !== subItemId);
+      } else {
+        return [...prev, subItemId];
+      }
+    });
+  }, []);
+
+  // Build description from selected categories for API submission
+  const buildCategoryDescription = useCallback(() => {
+    const parts: string[] = [];
+    selectedGroups.forEach((groupId) => {
+      const group = CATEGORY_GROUPS.find((g) => g.id === groupId);
+      if (!group) return;
+      const subs = group.subItems
+        .filter((s) => selectedSubItems.includes(s.id))
+        .map((s) => s.label);
+      if (subs.length > 0) {
+        parts.push(`${group.title}: ${subs.join('، ')}`);
+      } else {
+        parts.push(group.title);
+      }
+    });
+    if (specialNeedDescription) {
+      parts.push(`احتياج خاص: ${specialNeedDescription}`);
+    }
+    return parts.join(' | ');
+  }, [selectedGroups, selectedSubItems, specialNeedDescription]);
+
+  // Map selected groups to primary API category
+  const getPrimaryApiCategory = useCallback((): RequestCategory | '' => {
+    if (selectedGroups.length === 0) return '';
+    const primaryGroup = CATEGORY_GROUPS.find((g) => g.id === selectedGroups[0]);
+    return primaryGroup ? primaryGroup.apiCategory : '';
+  }, [selectedGroups]);
+
   // ====== Success Screen ======
   if (success) {
     const successContent = (
@@ -517,7 +703,7 @@ function NewRequestContent() {
             <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-5xl">🎉</span>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-1">تم إرسال طلبك بنجاح!</h2>
+            <h2 className="text-2xl font-bold text-white mb-1">تم تسجيل وضعك بنجاح!</h2>
             <p className="text-green-100 text-sm">{success.message}</p>
           </div>
 
@@ -573,6 +759,9 @@ function NewRequestContent() {
                   setSuccess(null);
                   setStep(1);
                   setPhoneNumber('');
+                  setSelectedGroups([]);
+                  setSelectedSubItems([]);
+                  setSpecialNeedDescription('');
                   setForm({
                     category: '',
                     description: '',
@@ -588,7 +777,7 @@ function NewRequestContent() {
                   deleteRecording();
                 }}
               >
-                ➕ تقديم طلب جديد
+                ➕ تسجيل وضع جديد
               </Button>
             </div>
           </div>
@@ -635,7 +824,7 @@ function NewRequestContent() {
   const canGoNext = () => {
     switch (step) {
       case 1:
-        return form.category !== '';
+        return selectedGroups.length > 0;
       case 2:
         // Description is optional now - can always proceed
         return true;
@@ -660,6 +849,13 @@ function NewRequestContent() {
   const nextStep = () => {
     if (step < 5 && canGoNext()) {
       setError('');
+      // When leaving step 1, set the API category from selected groups
+      if (step === 1) {
+        const apiCat = getPrimaryApiCategory();
+        if (apiCat) {
+          setForm((prev) => ({ ...prev, category: apiCat }));
+        }
+      }
       setStep(step + 1);
     }
   };
@@ -679,7 +875,7 @@ function NewRequestContent() {
           <Card className="text-center">
             <div className="flex flex-col items-center py-8">
               <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-6"></div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">جاري إرسال طلبك...</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">جاري تسجيل وضعك...</h2>
               <p className="text-gray-500">يرجى الانتظار قليلاً</p>
             </div>
           </Card>
@@ -710,8 +906,8 @@ function NewRequestContent() {
                 className="object-contain"
               />
               <div>
-                <h1 className="text-2xl font-bold text-white">طلب مساعدة جديد</h1>
-                <p className="text-primary-200 text-sm">أملأ البيانات ثم سجّل برقم هاتفك</p>
+                <h1 className="text-2xl font-bold text-white">تحديد الوضع الإنساني</h1>
+                <p className="text-primary-200 text-sm">حدّد وضعك وسنتعامل معه بسرّية واحترام تام</p>
               </div>
             </div>
           </div>
@@ -728,11 +924,11 @@ function NewRequestContent() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-accent-700 mb-1">كيف يعمل هذا؟</h3>
+                <h3 className="font-semibold text-accent-700 mb-1">كيف تعمل المنصة؟</h3>
                 <ol className="text-sm text-accent-600 space-y-1 list-decimal list-inside">
-                  <li>أملأ بيانات طلبك أدناه</li>
-                  <li>عند الإرسال، ستُسجّل برقم هاتفك فقط (OTP)</li>
-                  <li>سيُرسل طلبك ويُعطى لك رمز متابعة</li>
+                  <li>حدّد نوع الوضع الذي تمرّ به</li>
+                  <li>عند التأكيد، سجّل برقم هاتفك فقط</li>
+                  <li>سيُعطى لك رمز متابعة لتتبّع وضعك</li>
                 </ol>
               </div>
             </div>
@@ -790,48 +986,95 @@ function NewRequestContent() {
 
           {/* Step Content - Same as authenticated view */}
           <Card className="overflow-hidden">
-            {/* Step 1 */}
+            {/* Step 1 - Humanitarian Situation Assessment */}
             {step === 1 && (
               <div>
                 <div className="text-center mb-6">
-                  <span className="text-4xl mb-2 block">📋</span>
                   <h2 className="text-xl font-bold text-gray-900">ما نوع الوضع الذي تمرّ به حاليًا؟</h2>
-                  <p className="text-gray-500 text-sm mt-1">اختر ما يعبّر عن وضعك، وسيتم التعامل معه بسرّية واحترام.</p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    اختر ما يعبّر عن وضعك، وسيتم التعامل معه بسرّية تامة واحترام كامل للكرامة والخصوصية.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {ALL_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => {
-                        setForm({ ...form, category: cat });
-                        setError('');
-                      }}
-                      className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-center group ${
-                        form.category === cat
-                          ? `${CATEGORY_BG_SELECTED[cat]} ring-2 border-transparent scale-[1.02] shadow-md`
-                          : 'border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white'
-                      }`}
-                    >
-                      <div
-                        className={`w-14 h-14 rounded-xl bg-gradient-to-bl ${CATEGORY_COLORS[cat]} flex items-center justify-center mx-auto mb-2 shadow-sm group-hover:shadow-md transition-shadow`}
+                  {CATEGORY_GROUPS.map((group) => {
+                    const isSelected = selectedGroups.includes(group.id);
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={() => toggleGroup(group.id)}
+                        className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-center group ${
+                          isSelected
+                            ? `${group.selectedBg} ring-2 scale-[1.02] shadow-md`
+                            : 'border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white'
+                        }`}
                       >
-                        <span className="text-2xl filter drop-shadow-sm">
-                          {CATEGORY_ICONS[cat]}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-700 block">
-                        {CATEGORY_LABELS[cat]}
-                      </span>
-                      {form.category === cat && (
-                        <div className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs shadow-sm">
-                          ✓
+                        <div
+                          className={`w-14 h-14 rounded-xl ${group.iconBg} flex items-center justify-center mx-auto mb-2 transition-shadow group-hover:shadow-md`}
+                        >
+                          <span className="text-2xl">{group.icon}</span>
                         </div>
-                      )}
-                    </button>
-                  ))}
+                        <span className="text-sm font-medium text-gray-700 block">
+                          {group.title}
+                        </span>
+                        {isSelected && (
+                          <div className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-accent-500 rounded-full flex items-center justify-center text-white text-xs shadow-sm">
+                            ✓
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Sub-items for selected groups */}
+                {selectedGroups.length > 0 && (
+                  <div className="mt-6 space-y-4">
+                    {CATEGORY_GROUPS.filter((g) => selectedGroups.includes(g.id)).map((group) => (
+                      <div key={group.id} className="bg-gray-50 rounded-xl p-4">
+                        <h3 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                          <span>{group.icon}</span> {group.title}
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {group.subItems.map((sub) => {
+                            const isSubSelected = selectedSubItems.includes(sub.id);
+                            return (
+                              <button
+                                key={sub.id}
+                                type="button"
+                                onClick={() => toggleSubItem(sub.id)}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                                  isSubSelected
+                                    ? 'bg-accent-50 border-accent-300 text-accent-700 shadow-sm'
+                                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                                }`}
+                              >
+                                {isSubSelected && '✓ '}{sub.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Special need description field */}
+                    {selectedSubItems.includes('special_need') && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          وصف الاحتياج الخاص (اختياري)
+                        </label>
+                        <textarea
+                          value={specialNeedDescription}
+                          onChange={(e) => setSpecialNeedDescription(e.target.value)}
+                          placeholder="يمكنك شرح وضعك هنا بكل حرية وطمأنينة..."
+                          className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400 min-h-[80px] resize-y"
+                          rows={3}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Urgent toggle */}
                 <div className="mt-6 pt-5 border-t border-gray-100">
@@ -853,7 +1096,7 @@ function NewRequestContent() {
                     </div>
                     <div className="text-right flex-1">
                       <p className={`font-medium ${form.is_urgent ? 'text-red-700' : 'text-gray-700'}`}>
-                        طلب مستعجل
+                        وضع مستعجل
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         فعّل هذا الخيار إذا كان الأمر طارئاً ويحتاج استجابة سريعة
@@ -1217,27 +1460,49 @@ function NewRequestContent() {
               <div>
                 <div className="text-center mb-6">
                   <span className="text-4xl mb-2 block">✅</span>
-                  <h2 className="text-xl font-bold text-gray-900">مراجعة الطلب</h2>
+                  <h2 className="text-xl font-bold text-gray-900">مراجعة الوضع</h2>
                   <p className="text-gray-500 text-sm mt-1">تأكد من صحة المعلومات قبل المتابعة</p>
                 </div>
 
                 <div className="space-y-3">
-                  <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-bl ${form.category ? CATEGORY_COLORS[form.category as RequestCategory] : 'from-gray-400 to-gray-500'} flex items-center justify-center shadow-sm`}>
-                      <span className="text-xl">{form.category ? CATEGORY_ICONS[form.category as RequestCategory] : '❓'}</span>
+                  {/* Selected humanitarian categories */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-gray-500">نوع الوضع</p>
+                      {form.is_urgent && (
+                        <span className="bg-red-100 text-red-700 text-xs px-2.5 py-1 rounded-full font-medium">🚨 مستعجل</span>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500">نوع المساعدة</p>
-                      <p className="font-medium text-gray-800">{form.category ? CATEGORY_LABELS[form.category as RequestCategory] : 'غير محدد'}</p>
-                    </div>
-                    {form.is_urgent && (
-                      <span className="bg-red-100 text-red-700 text-xs px-2.5 py-1 rounded-full font-medium">🚨 مستعجل</span>
+                    {selectedGroups.length > 0 ? (
+                      <div className="space-y-2">
+                        {CATEGORY_GROUPS.filter((g) => selectedGroups.includes(g.id)).map((group) => {
+                          const subs = group.subItems.filter((s) => selectedSubItems.includes(s.id));
+                          return (
+                            <div key={group.id} className="flex items-start gap-2">
+                              <span className="text-lg">{group.icon}</span>
+                              <div>
+                                <p className="font-medium text-gray-800 text-sm">{group.title}</p>
+                                {subs.length > 0 && (
+                                  <p className="text-xs text-gray-500 mt-0.5">{subs.map((s) => s.label).join('، ')}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-bl ${form.category ? CATEGORY_COLORS[form.category as RequestCategory] : 'from-gray-400 to-gray-500'} flex items-center justify-center shadow-sm`}>
+                          <span className="text-xl">{form.category ? CATEGORY_ICONS[form.category as RequestCategory] : '❓'}</span>
+                        </div>
+                        <p className="font-medium text-gray-800">{form.category ? CATEGORY_LABELS[form.category as RequestCategory] : 'غير محدد'}</p>
+                      </div>
                     )}
                   </div>
 
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 mb-1">📝 وصف الاحتياج</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{form.description || 'لم يتم إضافة وصف'}</p>
+                    <p className="text-xs text-gray-500 mb-1">📝 تفاصيل إضافية</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{form.description || 'لم يتم إضافة تفاصيل'}</p>
                   </div>
 
                   <div className="bg-gray-50 rounded-xl p-4 grid grid-cols-2 gap-3">
@@ -1270,7 +1535,7 @@ function NewRequestContent() {
                 <div className="text-center mb-6">
                   <span className="text-4xl mb-2 block">📱</span>
                   <h2 className="text-xl font-bold text-gray-900">أدخل رقم هاتفك</h2>
-                  <p className="text-gray-500 text-sm mt-1">لإرسال طلبك والحصول على رمز المتابعة</p>
+                  <p className="text-gray-500 text-sm mt-1">لتسجيل وضعك والحصول على رمز المتابعة</p>
                 </div>
 
                 <div className="bg-gradient-to-l from-primary-50 to-blue-50 rounded-xl p-5 border border-primary-100 mb-4">
@@ -1350,9 +1615,16 @@ function NewRequestContent() {
                   className="flex-1 !bg-gradient-to-l from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 !shadow-lg"
                   size="lg"
                 >
-                  🤲 إرسال الطلب
+                  🕊️ متابعة تسجيل الوضع
                 </Button>
               )}
+            </div>
+
+            {/* Reassurance message */}
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-400">
+                جميع المعلومات تُعالج بسرّية تامة، ولا تُعرض للعموم تحت أي ظرف.
+              </p>
             </div>
           </Card>
 
@@ -1366,7 +1638,7 @@ function NewRequestContent() {
 
           {/* Trust message */}
           <div className="mt-6 bg-white border border-gray-100 rounded-2xl p-4 text-center">
-            <p className="text-sm text-gray-500">معلوماتك محمية وسرّية - كرامتك محفوظة</p>
+            <p className="text-sm text-gray-500">كرامتك محفوظة - المنصة تقف بجانبك لا فوقك</p>
           </div>
         </div>
       </div>
@@ -1385,9 +1657,9 @@ function NewRequestContent() {
             <span>→</span> العودة للرئيسية
           </button>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <span>🤲</span> طلب مساعدة جديد
+            <span>🕊️</span> تحديد الوضع الإنساني
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">نحن هنا لمساعدتك. أملأ الخطوات التالية بسهولة</p>
+          <p className="text-gray-500 mt-1 text-sm">حدّد وضعك بكل طمأنينة، وسيتم التعامل معه باحترام وسرّية</p>
         </div>
 
         {/* Progress Steps */}
@@ -1444,48 +1716,95 @@ function NewRequestContent() {
 
         {/* Step Content */}
         <Card className="overflow-hidden">
-          {/* ===== Step 1: Category Selection ===== */}
+          {/* ===== Step 1: Humanitarian Situation Assessment ===== */}
           {step === 1 && (
             <div>
               <div className="text-center mb-6">
-                <span className="text-4xl mb-2 block">📋</span>
                 <h2 className="text-xl font-bold text-gray-900">ما نوع الوضع الذي تمرّ به حاليًا؟</h2>
-                <p className="text-gray-500 text-sm mt-1">اختر ما يعبّر عن وضعك، وسيتم التعامل معه بسرّية واحترام.</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  اختر ما يعبّر عن وضعك، وسيتم التعامل معه بسرّية تامة واحترام كامل للكرامة والخصوصية.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {ALL_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => {
-                      setForm({ ...form, category: cat });
-                      setError('');
-                    }}
-                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-center group ${
-                      form.category === cat
-                        ? `${CATEGORY_BG_SELECTED[cat]} ring-2 border-transparent scale-[1.02] shadow-md`
-                        : 'border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white'
-                    }`}
-                  >
-                    <div
-                      className={`w-14 h-14 rounded-xl bg-gradient-to-bl ${CATEGORY_COLORS[cat]} flex items-center justify-center mx-auto mb-2 shadow-sm group-hover:shadow-md transition-shadow`}
+                {CATEGORY_GROUPS.map((group) => {
+                  const isSelected = selectedGroups.includes(group.id);
+                  return (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => toggleGroup(group.id)}
+                      className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-center group ${
+                        isSelected
+                          ? `${group.selectedBg} ring-2 scale-[1.02] shadow-md`
+                          : 'border-gray-100 hover:border-gray-200 hover:shadow-sm bg-white'
+                      }`}
                     >
-                      <span className="text-2xl filter drop-shadow-sm">
-                        {CATEGORY_ICONS[cat]}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700 block">
-                      {CATEGORY_LABELS[cat]}
-                    </span>
-                    {form.category === cat && (
-                      <div className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs shadow-sm">
-                        ✓
+                      <div
+                        className={`w-14 h-14 rounded-xl ${group.iconBg} flex items-center justify-center mx-auto mb-2 transition-shadow group-hover:shadow-md`}
+                      >
+                        <span className="text-2xl">{group.icon}</span>
                       </div>
-                    )}
-                  </button>
-                ))}
+                      <span className="text-sm font-medium text-gray-700 block">
+                        {group.title}
+                      </span>
+                      {isSelected && (
+                        <div className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-accent-500 rounded-full flex items-center justify-center text-white text-xs shadow-sm">
+                          ✓
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Sub-items for selected groups */}
+              {selectedGroups.length > 0 && (
+                <div className="mt-6 space-y-4">
+                  {CATEGORY_GROUPS.filter((g) => selectedGroups.includes(g.id)).map((group) => (
+                    <div key={group.id} className="bg-gray-50 rounded-xl p-4">
+                      <h3 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                        <span>{group.icon}</span> {group.title}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {group.subItems.map((sub) => {
+                          const isSubSelected = selectedSubItems.includes(sub.id);
+                          return (
+                            <button
+                              key={sub.id}
+                              type="button"
+                              onClick={() => toggleSubItem(sub.id)}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                                isSubSelected
+                                  ? 'bg-accent-50 border-accent-300 text-accent-700 shadow-sm'
+                                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                              }`}
+                            >
+                              {isSubSelected && '✓ '}{sub.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Special need description field */}
+                  {selectedSubItems.includes('special_need') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        وصف الاحتياج الخاص (اختياري)
+                      </label>
+                      <textarea
+                        value={specialNeedDescription}
+                        onChange={(e) => setSpecialNeedDescription(e.target.value)}
+                        placeholder="يمكنك شرح وضعك هنا بكل حرية وطمأنينة..."
+                        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400 min-h-[80px] resize-y"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Urgent toggle */}
               <div className="mt-6 pt-5 border-t border-gray-100">
@@ -1507,7 +1826,7 @@ function NewRequestContent() {
                   </div>
                   <div className="text-right flex-1">
                     <p className={`font-medium ${form.is_urgent ? 'text-red-700' : 'text-gray-700'}`}>
-                      طلب مستعجل
+                      وضع مستعجل
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       فعّل هذا الخيار إذا كان الأمر طارئاً ويحتاج استجابة سريعة
@@ -1924,36 +2243,57 @@ function NewRequestContent() {
             <div>
               <div className="text-center mb-6">
                 <span className="text-4xl mb-2 block">✅</span>
-                <h2 className="text-xl font-bold text-gray-900">مراجعة الطلب</h2>
-                <p className="text-gray-500 text-sm mt-1">تأكد من صحة المعلومات قبل الإرسال</p>
+                <h2 className="text-xl font-bold text-gray-900">مراجعة الوضع</h2>
+                <p className="text-gray-500 text-sm mt-1">تأكد من صحة المعلومات قبل التأكيد</p>
               </div>
 
               <div className="space-y-3">
-                {/* Category */}
-                <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-bl ${form.category ? CATEGORY_COLORS[form.category as RequestCategory] : 'from-gray-400 to-gray-500'} flex items-center justify-center shadow-sm`}>
-                    <span className="text-xl">
-                      {form.category ? CATEGORY_ICONS[form.category as RequestCategory] : '❓'}
-                    </span>
+                {/* Selected humanitarian categories */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-gray-500">نوع الوضع</p>
+                    {form.is_urgent && (
+                      <span className="bg-red-100 text-red-700 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
+                        🚨 مستعجل
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-primary-600 text-xs hover:underline"
+                    >
+                      تعديل
+                    </button>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500">نوع المساعدة</p>
-                    <p className="font-medium text-gray-800">
-                      {form.category ? CATEGORY_LABELS[form.category as RequestCategory] : 'غير محدد'}
-                    </p>
-                  </div>
-                  {form.is_urgent && (
-                    <span className="bg-red-100 text-red-700 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                      🚨 مستعجل
-                    </span>
+                  {selectedGroups.length > 0 ? (
+                    <div className="space-y-2">
+                      {CATEGORY_GROUPS.filter((g) => selectedGroups.includes(g.id)).map((group) => {
+                        const subs = group.subItems.filter((s) => selectedSubItems.includes(s.id));
+                        return (
+                          <div key={group.id} className="flex items-start gap-2">
+                            <span className="text-lg">{group.icon}</span>
+                            <div>
+                              <p className="font-medium text-gray-800 text-sm">{group.title}</p>
+                              {subs.length > 0 && (
+                                <p className="text-xs text-gray-500 mt-0.5">{subs.map((s) => s.label).join('، ')}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-bl ${form.category ? CATEGORY_COLORS[form.category as RequestCategory] : 'from-gray-400 to-gray-500'} flex items-center justify-center shadow-sm`}>
+                        <span className="text-xl">
+                          {form.category ? CATEGORY_ICONS[form.category as RequestCategory] : '❓'}
+                        </span>
+                      </div>
+                      <p className="font-medium text-gray-800">
+                        {form.category ? CATEGORY_LABELS[form.category as RequestCategory] : 'غير محدد'}
+                      </p>
+                    </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="text-primary-600 text-xs hover:underline"
-                  >
-                    تعديل
-                  </button>
                 </div>
 
                 {/* Description */}
@@ -2072,16 +2412,23 @@ function NewRequestContent() {
                 className="flex-1 !bg-gradient-to-l from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 !shadow-lg"
                 size="lg"
               >
-                🤲 إرسال الطلب
+                🕊️ متابعة تسجيل الوضع
               </Button>
             )}
+          </div>
+
+          {/* Reassurance message */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-400">
+              جميع المعلومات تُعالج بسرّية تامة، ولا تُعرض للعموم تحت أي ظرف.
+            </p>
           </div>
         </Card>
 
         {/* Help text at bottom */}
         <div className="text-center mt-6">
           <p className="text-xs text-gray-400 flex items-center justify-center gap-1.5">
-            <span>🔒</span> معلوماتك محمية وسرية بالكامل
+            <span>🔒</span> كرامتك محفوظة - المنصة تقف بجانبك لا فوقك
           </p>
         </div>
       </div>
