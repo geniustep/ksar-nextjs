@@ -17,7 +17,7 @@ import {
   CATEGORY_ICONS,
   ALL_REQUEST_STATUSES,
 } from '@/lib/constants';
-import type { InspectorRequestResponse, OrganizationBrief, RequestCategory, RequestStatus } from '@/lib/types';
+import type { InspectorRequestResponse, OrganizationBrief, RequestCategory, RequestStatus, RequestPledgesResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function InspectorRequestDetailPage() {
@@ -35,6 +35,13 @@ export default function InspectorRequestDetailPage() {
 
   // Phone request count
   const [phoneRequestCount, setPhoneRequestCount] = useState<number | null>(null);
+
+  // Pledges
+  const [pledgesData, setPledgesData] = useState<RequestPledgesResponse | null>(null);
+  const [showApproveForm, setShowApproveForm] = useState<string | null>(null); // assignment_id
+  const [approveShowPhone, setApproveShowPhone] = useState(false);
+  const [approveContactName, setApproveContactName] = useState('');
+  const [approveContactPhone, setApproveContactPhone] = useState('');
 
   // Form state
   const [inspectorNotes, setInspectorNotes] = useState('');
@@ -61,6 +68,14 @@ export default function InspectorRequestDetailPage() {
       setOrganizations(orgsRes.items);
       setInspectorNotes(reqRes.inspector_notes || '');
       setNewStatus(reqRes.status);
+
+      // Load pledges
+      try {
+        const pledges = await inspectorApi.getRequestPledges(requestId);
+        setPledgesData(pledges);
+      } catch {
+        // Silently handle
+      }
 
       // Load phone request count
       if (reqRes.requester_phone) {
@@ -127,6 +142,31 @@ export default function InspectorRequestDetailPage() {
       });
       setSuccess('تم ربط الطلب بالجمعية بنجاح');
       setShowAssignForm(false);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleApproveOrg = async (assignmentId: string) => {
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const result = await inspectorApi.approveOrgForRequest(requestId, {
+        assignment_id: assignmentId,
+        show_citizen_phone: approveShowPhone,
+        contact_name: approveContactName.trim() || undefined,
+        contact_phone: approveContactPhone.trim() || undefined,
+      });
+      setSuccess(result.message);
+      setShowApproveForm(null);
+      setApproveShowPhone(false);
+      setApproveContactName('');
+      setApproveContactPhone('');
       await loadData();
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail);
@@ -425,6 +465,139 @@ export default function InspectorRequestDetailPage() {
               )}
             </div>
           </Card>
+          {/* Pledged Organizations */}
+          {pledgesData && (pledgesData.pledge_count > 0 || pledgesData.approved) && (
+            <Card>
+              <CardTitle>
+                المؤسسات المتعهدة
+                {pledgesData.pledge_count > 0 && (
+                  <Badge className="bg-blue-100 text-blue-800 mr-2">
+                    {pledgesData.pledge_count} تعهد
+                  </Badge>
+                )}
+              </CardTitle>
+
+              {/* Approved org */}
+              {pledgesData.approved && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-green-600 font-bold">✓</span>
+                    <span className="font-medium text-green-800">{pledgesData.approved.org_name}</span>
+                    <Badge className="bg-green-100 text-green-700">{pledgesData.approved.status}</Badge>
+                  </div>
+                  {pledgesData.approved.org_phone && (
+                    <p className="text-sm text-green-600" dir="ltr">{pledgesData.approved.org_phone}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Pending pledges */}
+              {pledgesData.pledges.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {pledgesData.pledges.map((pledge) => (
+                    <div key={pledge.assignment_id} className="border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-gray-900">{pledge.org_name}</p>
+                          <p className="text-xs text-gray-500">
+                            {pledge.org_total_completed} تكفل مكتمل
+                            {pledge.org_phone && <span className="mr-2" dir="ltr">{pledge.org_phone}</span>}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setShowApproveForm(
+                              showApproveForm === pledge.assignment_id ? null : pledge.assignment_id
+                            );
+                            setApproveShowPhone(false);
+                            setApproveContactName('');
+                            setApproveContactPhone('');
+                          }}
+                        >
+                          الموافقة
+                        </Button>
+                      </div>
+                      {pledge.notes && (
+                        <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">{pledge.notes}</p>
+                      )}
+                      {pledge.created_at && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(pledge.created_at).toLocaleString('ar-MA')}
+                        </p>
+                      )}
+
+                      {/* Approve Form */}
+                      {showApproveForm === pledge.assignment_id && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-3">
+                          <p className="text-sm font-medium text-blue-800">خيارات التواصل</p>
+                          
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={approveShowPhone}
+                              onChange={(e) => setApproveShowPhone(e.target.checked)}
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                            <span className="text-sm text-gray-700">
+                              إظهار رقم المواطن ({request.requester_phone}) للمؤسسة
+                            </span>
+                          </label>
+
+                          <div className="text-xs text-gray-500 -mt-1">أو أدخل رقم واسم آخر للتواصل:</div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-gray-600 block mb-1">اسم التواصل</label>
+                              <input
+                                type="text"
+                                value={approveContactName}
+                                onChange={(e) => setApproveContactName(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                placeholder="اسم التواصل..."
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-600 block mb-1">رقم التواصل</label>
+                              <input
+                                type="tel"
+                                dir="ltr"
+                                value={approveContactPhone}
+                                onChange={(e) => setApproveContactPhone(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                placeholder="06XXXXXXXX"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              className="flex-1"
+                              onClick={() => handleApproveOrg(pledge.assignment_id)}
+                              loading={actionLoading}
+                            >
+                              تأكيد الموافقة على {pledge.org_name}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowApproveForm(null)}
+                            >
+                              إلغاء
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {pledgesData.pledge_count === 0 && !pledgesData.approved && (
+                <p className="text-sm text-gray-400 mt-3">لم تتعهد أي مؤسسة بعد</p>
+              )}
+            </Card>
+          )}
         </div>
 
         {/* Sidebar - Actions */}

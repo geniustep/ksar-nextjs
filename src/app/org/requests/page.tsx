@@ -130,15 +130,15 @@ export default function OrgRequestsPage() {
                       <Badge className="bg-purple-100 text-purple-800">
                         أولوية: {req.priority_score}
                       </Badge>
+                      {(req.pledge_count !== undefined && req.pledge_count > 0) && (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          {req.pledge_count} تعهد
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-gray-700 text-sm line-clamp-2 mb-2">{req.description}</p>
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                       <span>{req.requester_name}</span>
-                      {req.requester_phone ? (
-                        <span dir="ltr">{req.requester_phone}</span>
-                      ) : (
-                        <span className="text-orange-400">الهاتف مخفي</span>
-                      )}
                       {req.city && <span>{req.city}</span>}
                       {req.region && <span>{req.region}</span>}
                       <span>أفراد الأسرة: {req.family_members}</span>
@@ -146,9 +146,15 @@ export default function OrgRequestsPage() {
                     </div>
                   </div>
 
-                  <Button onClick={() => setPledgeModal(req.id)}>
-                    تكفل بالطلب
-                  </Button>
+                  {req.already_pledged ? (
+                    <Badge className="bg-green-100 text-green-700 px-4 py-2">
+                      ✓ تم التعهد - في انتظار الموافقة
+                    </Badge>
+                  ) : (
+                    <Button onClick={() => setPledgeModal(req.id)}>
+                      تعهد بالطلب
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -181,11 +187,11 @@ export default function OrgRequestsPage() {
       <Modal
         isOpen={!!pledgeModal}
         onClose={() => { setPledgeModal(null); setPledgeNotes(''); }}
-        title="التكفل بالطلب"
+        title="التعهد بالطلب"
       >
         <div className="space-y-4">
           <p className="text-gray-600 text-sm">
-            هل أنت متأكد من رغبتك في التكفل بهذا الطلب؟ سيتم تعيينه لمؤسستك.
+            هل تريد التعهد بهذا الطلب؟ سيتم إرسال تعهدك للمراقب للموافقة عليه.
           </p>
           <Textarea
             label="ملاحظات (اختياري)"
@@ -195,7 +201,7 @@ export default function OrgRequestsPage() {
           />
           <div className="flex gap-3">
             <Button onClick={handlePledge} loading={pledging} className="flex-1">
-              تأكيد التكفل
+              تأكيد التعهد
             </Button>
             <Button variant="secondary" onClick={() => setPledgeModal(null)}>
               إلغاء

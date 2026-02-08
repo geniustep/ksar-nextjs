@@ -174,6 +174,7 @@ function NewRequestContent() {
 
   // Phone registration state (for guest flow)
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [guestName, setGuestName] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   const [autoSubmitting, setAutoSubmitting] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -483,7 +484,7 @@ function NewRequestContent() {
       // Step 1: Register with phone number
       const registerResult = await otpApi.phoneRegister({
         phone: phoneNumber,
-        full_name: undefined, // Optional
+        full_name: guestName.trim() || undefined,
       });
 
       // Step 2: Save the token temporarily (needed for API call)
@@ -1526,6 +1527,19 @@ function NewRequestContent() {
                   <p className="text-xs text-gray-500 mt-2 text-center">
                     أدخل رقم هاتفك بدون رمز الدولة أو مع رمز الدولة (+212)
                   </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                    <span>👤</span> الاسم <span className="text-xs text-gray-400 font-normal">(اختياري)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    placeholder="الاسم الكامل"
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none placeholder:text-gray-400"
+                  />
                 </div>
 
                 {/* Terms of use checkbox */}

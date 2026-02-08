@@ -50,6 +50,7 @@ import type {
   InspectorListResponse,
   OrganizationBrief,
   OrganizationWithAssignments,
+  RequestPledgesResponse,
   OrganizationCreateRequest,
   OrganizationCreatedResponse,
   OrganizationLoginRequest,
@@ -639,6 +640,29 @@ export const inspectorApi = {
 
   getOrganizationsWithAssignments(): Promise<{ items: OrganizationWithAssignments[] }> {
     return request('/api/v1/inspector/organizations/details');
+  },
+
+  getRequestPledges(requestId: string): Promise<RequestPledgesResponse> {
+    return request(`/api/v1/inspector/requests/${requestId}/pledges`);
+  },
+
+  approveOrgForRequest(
+    requestId: string,
+    data: {
+      assignment_id: string;
+      show_citizen_phone: boolean;
+      contact_name?: string;
+      contact_phone?: string;
+    }
+  ): Promise<{ message: string; assignment_id: string }> {
+    const params = new URLSearchParams();
+    params.set('assignment_id', data.assignment_id);
+    params.set('show_citizen_phone', String(data.show_citizen_phone));
+    if (data.contact_name) params.set('contact_name', data.contact_name);
+    if (data.contact_phone) params.set('contact_phone', data.contact_phone);
+    return request(`/api/v1/inspector/requests/${requestId}/approve-org?${params.toString()}`, {
+      method: 'POST',
+    });
   },
 
   getPhoneRequestCount(phone: string): Promise<{ phone: string; count: number }> {

@@ -172,6 +172,8 @@ export interface RequestResponse {
   created_at: string;
   updated_at: string | null;
   completed_at: string | null;
+  pledge_count?: number;
+  already_pledged?: boolean;
 }
 
 export interface CitizenRequestResponse {
@@ -271,7 +273,7 @@ export interface AssignmentWithRequest {
   request: {
     id: string;
     requester_name: string;
-    requester_phone: string;
+    requester_phone: string | null;
     category: string;
     description: string;
     quantity: number;
@@ -283,6 +285,37 @@ export interface AssignmentWithRequest {
     longitude: number | null;
     is_urgent: number;
   };
+  contact?: {
+    name: string | null;
+    phone: string | null;
+    inspector_phone: string | null;
+  };
+}
+
+// === Inspector Pledges ===
+
+export interface PledgeInfo {
+  assignment_id: string;
+  org_id: string;
+  org_name: string;
+  org_phone: string | null;
+  org_email: string | null;
+  org_total_completed: number;
+  notes: string | null;
+  created_at: string | null;
+}
+
+export interface RequestPledgesResponse {
+  request_id: string;
+  request_status: string;
+  pledge_count: number;
+  pledges: PledgeInfo[];
+  approved: {
+    assignment_id: string;
+    org_name: string;
+    org_phone: string | null;
+    status: string;
+  } | null;
 }
 
 export interface PaginatedAssignments {

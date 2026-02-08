@@ -90,9 +90,21 @@ export default function OrgAssignmentsPage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <Badge className={ASSIGNMENT_STATUS_COLORS[a.status]}>
-                      {ASSIGNMENT_STATUS_LABELS[a.status]}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={ASSIGNMENT_STATUS_COLORS[a.status]}>
+                        {ASSIGNMENT_STATUS_LABELS[a.status]}
+                      </Badge>
+                      {a.status === 'pledged' && (
+                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg">
+                          في انتظار موافقة المراقب
+                        </span>
+                      )}
+                      {a.status === 'in_progress' && (
+                        <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-lg">
+                          تمت الموافقة - قيد التنفيذ
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 mt-2">
                       رقم التكفل: {a.id.slice(0, 8)}...
                     </p>

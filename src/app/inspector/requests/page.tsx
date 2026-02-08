@@ -201,6 +201,7 @@ function InspectorRequestsContent() {
                     <th className="text-center py-3 px-2 text-gray-500 font-medium">طلبات</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">التصنيف</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">المنطقة</th>
+                    <th className="text-center py-3 px-2 text-gray-500 font-medium">تعهدات</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">الحالة</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">التاريخ</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">إجراءات</th>
@@ -234,6 +235,13 @@ function InspectorRequestsContent() {
                         {CATEGORY_LABELS[req.category as RequestCategory] || req.category}
                       </td>
                       <td className="py-3 px-2 text-gray-600">{req.region || '-'}</td>
+                      <td className="py-3 px-2 text-center">
+                        {(req.pledge_count !== undefined && req.pledge_count > 0) ? (
+                          <Badge className="bg-blue-100 text-blue-800">{req.pledge_count}</Badge>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
                       <td className="py-3 px-2">
                         <Badge className={REQUEST_STATUS_COLORS[req.status]}>
                           {REQUEST_STATUS_LABELS[req.status]}

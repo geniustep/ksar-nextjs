@@ -83,7 +83,7 @@ export default function AssignmentDetailPage() {
     );
   }
 
-  const { assignment, request } = data;
+  const { assignment, request, contact } = data;
 
   return (
     <DashboardLayout>
@@ -96,6 +96,50 @@ export default function AssignmentDetailPage() {
         </button>
         <h1 className="text-2xl font-bold text-gray-900">تفاصيل التكفل</h1>
       </div>
+
+      {/* Contact Info Banner (only for approved assignments) */}
+      {contact && (assignment.status === 'in_progress' || assignment.status === 'completed') && (
+        <div className="bg-gradient-to-l from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 mb-6">
+          <h3 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+            <span>📞</span> معلومات التواصل
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {contact.name && (
+              <div>
+                <span className="text-xs text-green-600 block mb-1">اسم التواصل</span>
+                <span className="font-medium text-green-900">{contact.name}</span>
+              </div>
+            )}
+            {contact.phone && (
+              <div>
+                <span className="text-xs text-green-600 block mb-1">رقم التواصل</span>
+                <a href={`tel:${contact.phone}`} dir="ltr" className="font-medium text-green-900 underline">
+                  {contact.phone}
+                </a>
+              </div>
+            )}
+            {contact.inspector_phone && (
+              <div>
+                <span className="text-xs text-green-600 block mb-1">رقم المراقب</span>
+                <a href={`tel:${contact.inspector_phone}`} dir="ltr" className="font-medium text-green-900 underline">
+                  {contact.inspector_phone}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Waiting for approval notice */}
+      {assignment.status === 'pledged' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
+          <span className="text-2xl">⏳</span>
+          <div>
+            <p className="font-medium text-amber-800">في انتظار موافقة المراقب</p>
+            <p className="text-sm text-amber-600">سيتم إبلاغك عند الموافقة على تعهدك</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Assignment info */}
@@ -188,19 +232,10 @@ export default function AssignmentDetailPage() {
         </Card>
 
         {/* Actions */}
-        {assignment.status !== 'completed' && assignment.status !== 'failed' && (
+        {assignment.status === 'in_progress' && (
           <Card className="lg:col-span-2">
             <h2 className="text-lg font-semibold mb-4">تحديث الحالة</h2>
             <div className="space-y-4">
-              {assignment.status === 'pledged' && (
-                <Button
-                  onClick={() => handleStatusUpdate('in_progress')}
-                  loading={updating}
-                >
-                  بدء التنفيذ
-                </Button>
-              )}
-
               {assignment.status === 'in_progress' && (
                 <div className="space-y-4">
                   <Textarea
