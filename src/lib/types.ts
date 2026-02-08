@@ -447,6 +447,18 @@ export interface InspectorRequestUpdate {
   inspector_notes?: string;
 }
 
+export interface InspectorRequestDataUpdate {
+  requester_name?: string;
+  requester_phone?: string;
+  category?: RequestCategory;
+  description?: string;
+  quantity?: number;
+  family_members?: number;
+  address?: string;
+  city?: string;
+  region?: string;
+}
+
 export interface InspectorStats {
   total_reviewed: number;
   pending_count: number;

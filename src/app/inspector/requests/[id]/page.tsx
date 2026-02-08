@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardTitle } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
@@ -16,6 +17,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ICONS,
   ALL_REQUEST_STATUSES,
+  ALL_CATEGORIES,
 } from '@/lib/constants';
 import type { InspectorRequestResponse, OrganizationBrief, RequestCategory, RequestStatus, RequestPledgesResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,6 +56,21 @@ export default function InspectorRequestDetailPage() {
   // Status change
   const [newStatus, setNewStatus] = useState('');
 
+  // Edit request data
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    requester_name: '',
+    requester_phone: '',
+    category: '' as RequestCategory | '',
+    description: '',
+    quantity: 1,
+    family_members: 1,
+    address: '',
+    city: '',
+    region: '',
+  });
+  const [editLoading, setEditLoading] = useState(false);
+
   useEffect(() => {
     loadData();
   }, [requestId]);
@@ -68,6 +85,19 @@ export default function InspectorRequestDetailPage() {
       setOrganizations(orgsRes.items);
       setInspectorNotes(reqRes.inspector_notes || '');
       setNewStatus(reqRes.status);
+
+      // Initialize edit form
+      setEditForm({
+        requester_name: reqRes.requester_name || '',
+        requester_phone: reqRes.requester_phone || '',
+        category: reqRes.category as RequestCategory || '',
+        description: reqRes.description || '',
+        quantity: reqRes.quantity || 1,
+        family_members: reqRes.family_members || 1,
+        address: reqRes.address || '',
+        city: reqRes.city || '',
+        region: reqRes.region || '',
+      });
 
       // Load pledges
       try {
@@ -227,6 +257,57 @@ export default function InspectorRequestDetailPage() {
     }
   };
 
+  const handleSaveEdit = async () => {
+    setEditLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const updateData: Record<string, unknown> = {};
+      if (editForm.requester_name !== request?.requester_name) updateData.requester_name = editForm.requester_name;
+      if (editForm.requester_phone !== request?.requester_phone) updateData.requester_phone = editForm.requester_phone;
+      if (editForm.category && editForm.category !== request?.category) updateData.category = editForm.category;
+      if (editForm.description !== (request?.description || '')) updateData.description = editForm.description;
+      if (editForm.quantity !== request?.quantity) updateData.quantity = editForm.quantity;
+      if (editForm.family_members !== request?.family_members) updateData.family_members = editForm.family_members;
+      if (editForm.address !== (request?.address || '')) updateData.address = editForm.address;
+      if (editForm.city !== (request?.city || '')) updateData.city = editForm.city;
+      if (editForm.region !== (request?.region || '')) updateData.region = editForm.region;
+
+      if (Object.keys(updateData).length === 0) {
+        setError('لم يتم إجراء أي تغيير');
+        setEditLoading(false);
+        return;
+      }
+
+      await inspectorApi.editRequestData(requestId, updateData);
+      setSuccess('تم تحديث بيانات الطلب بنجاح');
+      setIsEditing(false);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail);
+      else setError('خطأ غير متوقع');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (request) {
+      setEditForm({
+        requester_name: request.requester_name || '',
+        requester_phone: request.requester_phone || '',
+        category: request.category as RequestCategory || '',
+        description: request.description || '',
+        quantity: request.quantity || 1,
+        family_members: request.family_members || 1,
+        address: request.address || '',
+        city: request.city || '',
+        region: request.region || '',
+      });
+    }
+    setIsEditing(false);
+  };
+
   const handleDelete = async () => {
     if (!confirm('هل أنت متأكد من حذف هذا الطلب؟ هذا الإجراء لا يمكن التراجع عنه.')) return;
     setActionLoading(true);
@@ -318,70 +399,176 @@ export default function InspectorRequestDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Request Info */}
           <Card>
-            <CardTitle>معلومات الطلب</CardTitle>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">صاحب الطلب</p>
-                <p className="font-medium">{request.requester_name}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">رقم الهاتف</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium" dir="ltr">{request.requester_phone}</p>
-                  {phoneRequestCount !== null && (
-                    <Badge className={
-                      phoneRequestCount > 3
-                        ? 'bg-orange-100 text-orange-800'
-                        : phoneRequestCount > 1
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-600'
-                    }>
-                      {phoneRequestCount} طلب
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">التصنيف</p>
-                <p className="font-medium">
-                  {CATEGORY_ICONS[request.category as RequestCategory]}{' '}
-                  {CATEGORY_LABELS[request.category as RequestCategory] || request.category}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">أفراد الأسرة</p>
-                <p className="font-medium">{request.family_members}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">الكمية</p>
-                <p className="font-medium">{request.quantity}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">الأولوية</p>
-                <p className="font-medium">{request.priority_score}/100</p>
-              </div>
-              {request.is_urgent === 1 && (
-                <div className="col-span-2">
-                  <Badge className="bg-red-100 text-red-800">مستعجل</Badge>
+            <div className="flex items-center justify-between mb-4">
+              <CardTitle>معلومات الطلب</CardTitle>
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                >
+                  <span>✏️</span> تحرير
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    loading={editLoading}
+                  >
+                    حفظ التغييرات
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    disabled={editLoading}
+                  >
+                    إلغاء
+                  </Button>
                 </div>
               )}
             </div>
 
-            {/* Supervisor Info */}
-            {request.inspector_id && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">المراقب المسؤول:</span>
-                  <Badge className="bg-indigo-50 text-indigo-700">
-                    {isSupervisor ? 'أنت' : `مراقب #${request.inspector_id.slice(0, 8)}`}
-                  </Badge>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="صاحب الطلب"
+                    value={editForm.requester_name}
+                    onChange={(e) => setEditForm({ ...editForm, requester_name: e.target.value })}
+                    required
+                  />
+                  <Input
+                    label="رقم الهاتف"
+                    value={editForm.requester_phone}
+                    onChange={(e) => setEditForm({ ...editForm, requester_phone: e.target.value })}
+                    dir="ltr"
+                    required
+                  />
+                </div>
+
+                <Select
+                  label="التصنيف"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value as RequestCategory })}
+                  options={ALL_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
+                />
+
+                <Textarea
+                  label="الوصف"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows={3}
+                  placeholder="وصف الطلب..."
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="الكمية"
+                    type="number"
+                    value={String(editForm.quantity)}
+                    onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
+                    min={1}
+                  />
+                  <Input
+                    label="أفراد الأسرة"
+                    type="number"
+                    value={String(editForm.family_members)}
+                    onChange={(e) => setEditForm({ ...editForm, family_members: parseInt(e.target.value) || 1 })}
+                    min={1}
+                  />
+                </div>
+
+                <Input
+                  label="العنوان"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="المدينة"
+                    value={editForm.city}
+                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                  />
+                  <Input
+                    label="المنطقة"
+                    value={editForm.region}
+                    onChange={(e) => setEditForm({ ...editForm, region: e.target.value })}
+                  />
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
+                  <span className="font-medium">ملاحظة:</span> سيتم حفظ التغييرات مباشرة على الطلب الأصلي
                 </div>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">صاحب الطلب</p>
+                    <p className="font-medium">{request.requester_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">رقم الهاتف</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium" dir="ltr">{request.requester_phone}</p>
+                      {phoneRequestCount !== null && (
+                        <Badge className={
+                          phoneRequestCount > 3
+                            ? 'bg-orange-100 text-orange-800'
+                            : phoneRequestCount > 1
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-600'
+                        }>
+                          {phoneRequestCount} طلب
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">التصنيف</p>
+                    <p className="font-medium">
+                      {CATEGORY_ICONS[request.category as RequestCategory]}{' '}
+                      {CATEGORY_LABELS[request.category as RequestCategory] || request.category}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">أفراد الأسرة</p>
+                    <p className="font-medium">{request.family_members}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">الكمية</p>
+                    <p className="font-medium">{request.quantity}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">الأولوية</p>
+                    <p className="font-medium">{request.priority_score}/100</p>
+                  </div>
+                  {request.is_urgent === 1 && (
+                    <div className="col-span-2">
+                      <Badge className="bg-red-100 text-red-800">مستعجل</Badge>
+                    </div>
+                  )}
+                </div>
+
+                {/* Supervisor Info */}
+                {request.inspector_id && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">المراقب المسؤول:</span>
+                      <Badge className="bg-indigo-50 text-indigo-700">
+                        {isSupervisor ? 'أنت' : `مراقب #${request.inspector_id.slice(0, 8)}`}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </Card>
 
           {/* Description */}
-          {request.description && (
+          {!isEditing && request.description && (
             <Card>
               <CardTitle>الوصف</CardTitle>
               <p className="text-gray-700 mt-2 whitespace-pre-wrap">{request.description}</p>
@@ -389,31 +576,33 @@ export default function InspectorRequestDetailPage() {
           )}
 
           {/* Location */}
-          <Card>
-            <CardTitle>الموقع</CardTitle>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">العنوان</p>
-                <p className="text-gray-700">{request.address || '-'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">المدينة</p>
-                <p className="text-gray-700">{request.city || '-'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">المنطقة</p>
-                <p className="text-gray-700">{request.region || '-'}</p>
-              </div>
-              {request.latitude && request.longitude && (
+          {!isEditing && (
+            <Card>
+              <CardTitle>الموقع</CardTitle>
+              <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">الإحداثيات</p>
-                  <p className="text-gray-700 text-xs" dir="ltr">
-                    {request.latitude.toFixed(5)}, {request.longitude.toFixed(5)}
-                  </p>
+                  <p className="text-xs text-gray-400 mb-1">العنوان</p>
+                  <p className="text-gray-700">{request.address || '-'}</p>
                 </div>
-              )}
-            </div>
-          </Card>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">المدينة</p>
+                  <p className="text-gray-700">{request.city || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">المنطقة</p>
+                  <p className="text-gray-700">{request.region || '-'}</p>
+                </div>
+                {request.latitude && request.longitude && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">الإحداثيات</p>
+                    <p className="text-gray-700 text-xs" dir="ltr">
+                      {request.latitude.toFixed(5)}, {request.longitude.toFixed(5)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Audio */}
           {request.audio_url && (

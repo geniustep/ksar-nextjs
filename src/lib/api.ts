@@ -44,6 +44,7 @@ import type {
   InspectorAssignRequest,
   InspectorRejectRequest,
   InspectorRequestUpdate,
+  InspectorRequestDataUpdate,
   InspectorStats,
   InspectorCreateRequest,
   InspectorCreatedResponse,
@@ -612,6 +613,13 @@ export const inspectorApi = {
 
   updateRequestNotes(requestId: string, data: InspectorRequestUpdate): Promise<{ message: string }> {
     return request(`/api/v1/inspector/requests/${requestId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  editRequestData(requestId: string, data: InspectorRequestDataUpdate): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/edit`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
