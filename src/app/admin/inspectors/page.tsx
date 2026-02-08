@@ -32,6 +32,13 @@ export default function AdminInspectorsPage() {
   const [fullInfoCopied, setFullInfoCopied] = useState(false);
   const [copiedInspectorId, setCopiedInspectorId] = useState<string | null>(null);
 
+  // Set code modal
+  const [showSetCodeModal, setShowSetCodeModal] = useState(false);
+  const [setCodeInspector, setSetCodeInspector] = useState<InspectorResponse | null>(null);
+  const [customCode, setCustomCode] = useState('');
+  const [setCodeLoading, setSetCodeLoading] = useState(false);
+  const [setCodeError, setSetCodeError] = useState('');
+
   useEffect(() => {
     loadInspectors();
   }, []);
@@ -90,16 +97,42 @@ export default function AdminInspectorsPage() {
     }
   };
 
-  const handleRegenerateCode = async (inspector: InspectorResponse) => {
-    if (!confirm(`هل تريد إعادة توليد كود الدخول لـ ${inspector.full_name}؟`)) return;
+  const openSetCodeModal = (inspector: InspectorResponse) => {
+    setSetCodeInspector(inspector);
+    setCustomCode('');
+    setSetCodeError('');
+    setShowSetCodeModal(true);
+  };
+
+  const handleSetCode = async (useCustom: boolean) => {
+    if (!setCodeInspector) return;
+
+    if (useCustom && customCode.length !== 6) {
+      setSetCodeError('الكود يجب أن يكون 6 أرقام');
+      return;
+    }
+
+    setSetCodeLoading(true);
+    setSetCodeError('');
     try {
-      const res = await adminApi.regenerateInspectorCode(inspector.id);
+      const res = await adminApi.regenerateInspectorCode(
+        setCodeInspector.id,
+        useCustom ? customCode : undefined
+      );
+      setShowSetCodeModal(false);
       setDisplayCode(res.access_code);
-      setDisplayName(inspector.full_name);
-      setDisplayPhone(inspector.phone || '');
+      setDisplayName(setCodeInspector.full_name);
+      setDisplayPhone(setCodeInspector.phone || '');
       setShowCodeModal(true);
+      await loadInspectors();
     } catch (err) {
-      if (err instanceof ApiError) alert(err.detail);
+      if (err instanceof ApiError) {
+        setSetCodeError(err.detail);
+      } else {
+        setSetCodeError('خطأ في الاتصال بالخادم');
+      }
+    } finally {
+      setSetCodeLoading(false);
     }
   };
 
@@ -239,10 +272,10 @@ export default function AdminInspectorsPage() {
                           </button>
                         )}
                         <button
-                          onClick={() => handleRegenerateCode(inspector)}
+                          onClick={() => openSetCodeModal(inspector)}
                           className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg transition-colors"
                         >
-                          كود جديد
+                          تعيين كود
                         </button>
                         <button
                           onClick={() => handleDelete(inspector)}
@@ -300,6 +333,65 @@ export default function AdminInspectorsPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Set Code Modal */}
+      <Modal isOpen={showSetCodeModal} onClose={() => setShowSetCodeModal(false)} title={`تعيين كود الدخول - ${setCodeInspector?.full_name || ''}`}>
+        <div>
+          {setCodeError && (
+            <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl mb-4">
+              {setCodeError}
+            </div>
+          )}
+
+          {/* Option 1: Custom code */}
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <span>✏️</span> كتابة كود مخصص
+            </h4>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customCode}
+                onChange={(e) => setCustomCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                placeholder="أدخل 6 أرقام"
+                maxLength={6}
+                dir="ltr"
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-center font-mono text-xl tracking-[0.4em] focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none"
+              />
+              <Button
+                onClick={() => handleSetCode(true)}
+                loading={setCodeLoading}
+                disabled={customCode.length !== 6}
+                className="whitespace-nowrap"
+              >
+                تعيين
+              </Button>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">اكتب كود من 6 أرقام من اختيارك</p>
+          </div>
+
+          {/* Separator */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 font-medium">أو</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* Option 2: Auto-generate */}
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => handleSetCode(false)}
+            loading={setCodeLoading}
+          >
+            🔄 توليد كود تلقائي
+          </Button>
+
+          <Button variant="ghost" className="w-full mt-3" onClick={() => setShowSetCodeModal(false)}>
+            إلغاء
+          </Button>
+        </div>
       </Modal>
 
       {/* Code Display Modal */}

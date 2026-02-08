@@ -426,9 +426,10 @@ export const adminApi = {
     });
   },
 
-  regenerateInspectorCode(inspectorId: string): Promise<{ message: string; access_code: string }> {
+  regenerateInspectorCode(inspectorId: string, customCode?: string): Promise<{ message: string; access_code: string }> {
     return request(`/api/v1/admin/inspectors/${inspectorId}/regenerate-code`, {
       method: 'POST',
+      body: JSON.stringify(customCode ? { custom_code: customCode } : {}),
     });
   },
 
