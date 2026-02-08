@@ -12,7 +12,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: string;
-  mobileLabel?: string; // shorter label for bottom bar
+  mobileLabel?: string;
 }
 
 const adminNav: NavItem[] = [
@@ -99,7 +99,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/');
   };
 
-  // For bottom bar: show max 5 items, the rest go in "more" menu
   const maxBottomItems = 5;
   const bottomNavItems = navItems.slice(0, maxBottomItems);
   const hasMore = navItems.length > maxBottomItems;
@@ -115,16 +114,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-neutral-light" dir="rtl">
       {/* Mobile top bar */}
-      <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+      <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-2.5 flex items-center justify-between sticky top-0 z-30">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="كرامة قصر" width={28} height={28} className="object-contain" />
-          <span className="text-base font-bold text-primary-600 font-cairo">كرامة قصر</span>
+          <Image src="/logo.png" alt="كرامة قصر" width={24} height={24} className="object-contain" />
+          <span className="text-sm font-bold text-primary-600 font-cairo">كرامة قصر</span>
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 hidden sm:block">{user.full_name}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-gray-500 hidden sm:block">{user.full_name}</span>
           <button
             onClick={handleLogout}
-            className="text-xs text-danger-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors"
+            className="text-[11px] text-danger-500 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
           >
             خروج
           </button>
@@ -136,13 +135,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <aside className="hidden lg:flex lg:sticky top-0 z-auto h-screen w-64 bg-white border-l border-gray-100 flex-col">
           <div className="p-6 border-b border-gray-50">
             <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/logo.png"
-                alt="كرامة قصر"
-                width={36}
-                height={36}
-                className="object-contain"
-              />
+              <Image src="/logo.png" alt="كرامة قصر" width={36} height={36} className="object-contain" />
               <div>
                 <span className="text-xl font-bold text-primary-600 font-cairo block leading-tight">كرامة قصر</span>
                 <span className="text-[9px] text-accent-500 font-inter tracking-widest">KKSAR.MA</span>
@@ -181,35 +174,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 min-h-screen pb-20 lg:pb-0">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl">
+        {/* Main content - pb-[72px] to account for bottom nav height */}
+        <main className="flex-1 min-h-screen pb-[72px] lg:pb-0">
+          <div className="p-3 sm:p-5 lg:p-8 max-w-7xl">
             {children}
           </div>
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar - always visible */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 safe-area-pb">
+      {/* Mobile Bottom Navigation Bar */}
+      <div
+        className="lg:hidden"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          backgroundColor: 'white',
+          borderTop: '1px solid #e5e7eb',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
         <div className="flex items-stretch">
           {bottomNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] transition-colors relative',
+                'flex-1 flex flex-col items-center justify-center py-2 px-0.5 min-h-[54px] transition-colors relative',
                 isActive(item.href)
                   ? 'text-primary-600'
                   : 'text-gray-400'
               )}
             >
               {isActive(item.href) && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-600 rounded-full" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-primary-600 rounded-full" />
               )}
-              <span className="text-lg leading-none">{item.icon}</span>
+              <span className="text-[17px] leading-none">{item.icon}</span>
               <span className={cn(
-                'text-[10px] mt-1 leading-tight truncate max-w-full',
-                isActive(item.href) ? 'font-semibold' : 'font-normal'
+                'text-[9px] mt-0.5 leading-tight truncate max-w-full',
+                isActive(item.href) ? 'font-bold' : 'font-normal'
               )}>
                 {item.mobileLabel || item.label}
               </span>
@@ -219,24 +224,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] transition-colors relative',
+                'flex-1 flex flex-col items-center justify-center py-2 px-0.5 min-h-[54px] transition-colors relative',
                 showMobileMenu ? 'text-primary-600' : 'text-gray-400'
               )}
             >
-              <span className="text-lg leading-none">⋯</span>
-              <span className="text-[10px] mt-1 leading-tight font-normal">المزيد</span>
+              <span className="text-[17px] leading-none">⋯</span>
+              <span className="text-[9px] mt-0.5 leading-tight font-normal">المزيد</span>
             </button>
           )}
         </div>
 
-        {/* More menu overlay */}
+        {/* More menu popup */}
         {showMobileMenu && hasMore && (
           <>
             <div
-              className="fixed inset-0 z-40"
+              className="fixed inset-0"
+              style={{ zIndex: 9998 }}
               onClick={() => setShowMobileMenu(false)}
             />
-            <div className="absolute bottom-full left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg rounded-t-2xl p-4 space-y-1">
+            <div
+              className="absolute bottom-full left-0 right-0 bg-white border-t border-gray-200 shadow-2xl rounded-t-2xl p-3 space-y-1"
+              style={{ zIndex: 9999 }}
+            >
               {moreItems.map((item) => (
                 <Link
                   key={item.href}
@@ -256,14 +265,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </>
         )}
-      </nav>
-
-      {/* Safe area padding style */}
-      <style jsx global>{`
-        .safe-area-pb {
-          padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-      `}</style>
+      </div>
     </div>
   );
 }
