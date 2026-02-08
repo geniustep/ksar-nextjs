@@ -395,7 +395,7 @@ export default function AdminInspectorsPage() {
                 type="text"
                 value={customCode}
                 onChange={(e) => setCustomCode(e.target.value.replace(/\s/g, '').slice(0, 20))}
-                placeholder="مثال: ,,07Genius"
+                placeholder="code "
                 maxLength={20}
                 dir="ltr"
                 className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-center font-mono text-lg tracking-wider focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none"
