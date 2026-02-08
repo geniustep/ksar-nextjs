@@ -352,6 +352,7 @@ export interface AdminOrgListItem {
   status: string;
   total_completed: number;
   created_at: string;
+  access_code: string | null;
 }
 
 export interface AdminOrgList {

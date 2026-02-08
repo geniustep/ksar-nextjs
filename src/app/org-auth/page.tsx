@@ -125,8 +125,7 @@ export default function OrgAuthPage() {
                   </label>
                   <input
                     type="text"
-                    inputMode="numeric"
-                    maxLength={8}
+                    maxLength={20}
                     placeholder="أدخل الكود"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}

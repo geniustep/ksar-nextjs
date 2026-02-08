@@ -215,6 +215,7 @@ export const publicApi = {
     city?: string;
     region?: string;
     responsible_name?: string;
+    preferred_code?: string;
   }): Promise<{ message: string; organization_name: string }> {
     return request('/api/v1/public/org-register', {
       method: 'POST',
@@ -448,9 +449,10 @@ export const adminApi = {
     });
   },
 
-  regenerateOrgCode(orgId: string): Promise<{ message: string; access_code: string }> {
+  regenerateOrgCode(orgId: string, customCode?: string): Promise<{ message: string; access_code: string }> {
     return request(`/api/v1/admin/organizations/${orgId}/regenerate-code`, {
       method: 'POST',
+      body: JSON.stringify(customCode ? { custom_code: customCode } : {}),
     });
   },
 

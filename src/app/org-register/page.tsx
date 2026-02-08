@@ -17,6 +17,7 @@ export default function OrgRegisterPage() {
     city: '',
     region: '',
     description: '',
+    preferred_code: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,7 @@ export default function OrgRegisterPage() {
         city: form.city.trim() || undefined,
         region: form.region.trim() || undefined,
         description: form.description.trim() || undefined,
+        preferred_code: form.preferred_code.trim() || undefined,
       });
       setOrgName(res.organization_name);
       setSuccess(true);
@@ -169,6 +171,25 @@ export default function OrgRegisterPage() {
                   required
                   dir="ltr"
                 />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    كود الدخول المفضل (اختياري)
+                  </label>
+                  <input
+                    type="text"
+                    name="preferred_code"
+                    value={form.preferred_code}
+                    onChange={(e) => setForm({ ...form, preferred_code: e.target.value.replace(/\s/g, '').slice(0, 20) })}
+                    placeholder="مثال: ,,07Genius"
+                    maxLength={20}
+                    dir="ltr"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-mono tracking-wider focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none placeholder:text-gray-400 text-gray-800"
+                  />
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    اختر كود من 6 إلى 20 حرف (أحرف، أرقام، رموز - أي شيء ما عدا المسافات). إن لم تختر، سيتم توليد كود قوي تلقائيا.
+                  </p>
+                </div>
 
                 <Input
                   label="اسم المسؤول"

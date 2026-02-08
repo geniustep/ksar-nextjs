@@ -39,6 +39,15 @@ export default function AdminOrganizationsPage() {
   const [displayPhone, setDisplayPhone] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
   const [fullInfoCopied, setFullInfoCopied] = useState(false);
+  const [copiedOrgId, setCopiedOrgId] = useState<string | null>(null);
+  const [visibleCodeIds, setVisibleCodeIds] = useState<Set<string>>(new Set());
+
+  // Set code modal
+  const [showSetCodeModal, setShowSetCodeModal] = useState(false);
+  const [setCodeOrg, setSetCodeOrg] = useState<AdminOrgListItem | null>(null);
+  const [customCode, setCustomCode] = useState('');
+  const [setCodeLoading, setSetCodeLoading] = useState(false);
+  const [setCodeError, setSetCodeError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -110,16 +119,37 @@ export default function AdminOrganizationsPage() {
     }
   };
 
-  const handleRegenerateCode = async (org: AdminOrgListItem) => {
-    if (!confirm(`هل تريد إعادة توليد كود الدخول لـ ${org.name}؟`)) return;
+  const openSetCodeModal = (org: AdminOrgListItem) => {
+    setSetCodeOrg(org);
+    setCustomCode('');
+    setSetCodeError('');
+    setShowSetCodeModal(true);
+  };
+
+  const handleSetCode = async (useCustom: boolean) => {
+    if (!setCodeOrg) return;
+    if (useCustom && (customCode.length < 6 || customCode.length > 20)) {
+      setSetCodeError('الكود يجب أن يكون بين 6 و 20 حرف');
+      return;
+    }
+    setSetCodeLoading(true);
+    setSetCodeError('');
     try {
-      const res = await adminApi.regenerateOrgCode(org.id);
+      const res = await adminApi.regenerateOrgCode(setCodeOrg.id, useCustom ? customCode : undefined);
+      setShowSetCodeModal(false);
       setDisplayCode(res.access_code);
-      setDisplayName(org.name);
-      setDisplayPhone(org.contact_phone);
+      setDisplayName(setCodeOrg.name);
+      setDisplayPhone(setCodeOrg.contact_phone);
       setShowCodeModal(true);
+      await loadData();
     } catch (err) {
-      if (err instanceof ApiError) alert(err.detail);
+      if (err instanceof ApiError) {
+        setSetCodeError(err.detail);
+      } else {
+        setSetCodeError('خطأ في الاتصال بالخادم');
+      }
+    } finally {
+      setSetCodeLoading(false);
     }
   };
 
@@ -144,6 +174,25 @@ export default function AdminOrganizationsPage() {
     await navigator.clipboard.writeText(text);
     setFullInfoCopied(true);
     setTimeout(() => setFullInfoCopied(false), 2000);
+  };
+
+  const copyOrgCode = async (org: AdminOrgListItem) => {
+    if (!org.access_code) return;
+    await navigator.clipboard.writeText(org.access_code);
+    setCopiedOrgId(org.id);
+    setTimeout(() => setCopiedOrgId(null), 2000);
+  };
+
+  const toggleCodeVisibility = (orgId: string) => {
+    setVisibleCodeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orgId)) {
+        next.delete(orgId);
+      } else {
+        next.add(orgId);
+      }
+      return next;
+    });
   };
 
   return (
@@ -191,6 +240,7 @@ export default function AdminOrganizationsPage() {
                 <tr className="border-b border-gray-100">
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">المؤسسة</th>
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">الهاتف</th>
+                  <th className="text-right py-3 px-3 text-gray-500 font-medium">الكود</th>
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">البريد</th>
                   <th className="text-right py-3 px-3 text-gray-500 font-medium">الحالة</th>
                   <th className="text-center py-3 px-3 text-gray-500 font-medium">المنجز</th>
@@ -203,6 +253,46 @@ export default function AdminOrganizationsPage() {
                   <tr key={org.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                     <td className="py-3 px-3 font-medium">{org.name}</td>
                     <td className="py-3 px-3 text-gray-600" dir="ltr">{org.contact_phone}</td>
+                    <td className="py-3 px-3">
+                      {org.access_code ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs bg-gray-100 text-gray-700 px-2.5 py-1.5 rounded-lg font-semibold tracking-wider border border-gray-200 select-none" dir="ltr">
+                            {visibleCodeIds.has(org.id)
+                              ? org.access_code
+                              : '••••••••••'}
+                          </span>
+                          <button
+                            onClick={() => toggleCodeVisibility(org.id)}
+                            className="text-xs px-1.5 py-1.5 rounded-lg transition-all text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                            title={visibleCodeIds.has(org.id) ? 'إخفاء الكود' : 'إظهار الكود'}
+                          >
+                            {visibleCodeIds.has(org.id) ? (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => copyOrgCode(org)}
+                            className={`text-xs px-2 py-1.5 rounded-lg transition-all font-medium ${
+                              copiedOrgId === org.id
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600 hover:bg-primary-50 hover:text-primary-700'
+                            }`}
+                            title="نسخ الكود"
+                          >
+                            {copiedOrgId === org.id ? '✓ تم' : '📋 نسخ'}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </td>
                     <td className="py-3 px-3 text-gray-500" dir="ltr">{org.contact_email || '-'}</td>
                     <td className="py-3 px-3">
                       <Badge className={
@@ -232,10 +322,10 @@ export default function AdminOrganizationsPage() {
                           {org.status === 'active' ? 'تعليق' : 'تفعيل'}
                         </button>
                         <button
-                          onClick={() => handleRegenerateCode(org)}
+                          onClick={() => openSetCodeModal(org)}
                           className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg transition-colors"
                         >
-                          كود جديد
+                          تعيين كود
                         </button>
                         <button
                           onClick={() => handleDelete(org)}
@@ -340,6 +430,62 @@ export default function AdminOrganizationsPage() {
         </form>
       </Modal>
 
+      {/* Set Code Modal */}
+      <Modal isOpen={showSetCodeModal} onClose={() => setShowSetCodeModal(false)} title={`تعيين كود الدخول - ${setCodeOrg?.name || ''}`}>
+        <div>
+          {setCodeError && (
+            <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl mb-4">
+              {setCodeError}
+            </div>
+          )}
+
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <span>✏️</span> كتابة كود مخصص
+            </h4>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customCode}
+                onChange={(e) => setCustomCode(e.target.value.replace(/\s/g, '').slice(0, 20))}
+                placeholder="مثال: ,,07Genius"
+                maxLength={20}
+                dir="ltr"
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-center font-mono text-lg tracking-wider focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none"
+              />
+              <Button
+                onClick={() => handleSetCode(true)}
+                loading={setCodeLoading}
+                disabled={customCode.length < 6 || customCode.length > 20}
+                className="whitespace-nowrap"
+              >
+                تعيين
+              </Button>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">اكتب كود من 6 إلى 20 حرف (أحرف، أرقام، رموز - أي شيء ما عدا المسافات)</p>
+          </div>
+
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 font-medium">أو</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => handleSetCode(false)}
+            loading={setCodeLoading}
+          >
+            🔄 توليد كود تلقائي
+          </Button>
+
+          <Button variant="ghost" className="w-full mt-3" onClick={() => setShowSetCodeModal(false)}>
+            إلغاء
+          </Button>
+        </div>
+      </Modal>
+
       {/* Code Display Modal */}
       <Modal isOpen={showCodeModal} onClose={() => { setShowCodeModal(false); setCodeCopied(false); setFullInfoCopied(false); }} title="بيانات الدخول">
         <div className="text-center">
@@ -351,7 +497,7 @@ export default function AdminOrganizationsPage() {
 
           <div className="bg-primary-50 border-2 border-primary-200 rounded-2xl p-6 mb-4">
             <p className="text-xs text-gray-500 mb-2">كود الدخول</p>
-            <p className="text-4xl font-mono font-bold text-primary-700 tracking-[0.5em]" dir="ltr">
+            <p className="text-3xl sm:text-4xl font-mono font-bold text-primary-700 tracking-[0.3em]" dir="ltr">
               {displayCode}
             </p>
           </div>

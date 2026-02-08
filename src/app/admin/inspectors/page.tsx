@@ -108,8 +108,8 @@ export default function AdminInspectorsPage() {
   const handleSetCode = async (useCustom: boolean) => {
     if (!setCodeInspector) return;
 
-    if (useCustom && (customCode.length < 4 || customCode.length > 8)) {
-      setSetCodeError('الكود يجب أن يكون بين 4 و 8 أحرف');
+    if (useCustom && (customCode.length < 6 || customCode.length > 20)) {
+      setSetCodeError('الكود يجب أن يكون بين 6 و 20 حرف');
       return;
     }
 
@@ -234,10 +234,8 @@ export default function AdminInspectorsPage() {
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono text-xs bg-gray-100 text-gray-700 px-2.5 py-1.5 rounded-lg font-semibold tracking-wider border border-gray-200 select-none" dir="ltr">
                             {visibleCodeIds.has(inspector.id)
-                              ? (inspector.access_code.length > 4
-                                  ? `${inspector.access_code.slice(0, 4)}-${inspector.access_code.slice(4)}`
-                                  : inspector.access_code)
-                              : '••••-••••'}
+                              ? inspector.access_code
+                              : '••••••••••'}
                           </span>
                           <button
                             onClick={() => toggleCodeVisibility(inspector.id)}
@@ -390,22 +388,22 @@ export default function AdminInspectorsPage() {
               <input
                 type="text"
                 value={customCode}
-                onChange={(e) => setCustomCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8))}
-                placeholder="مثال: ABCD1234"
-                maxLength={8}
+                onChange={(e) => setCustomCode(e.target.value.replace(/\s/g, '').slice(0, 20))}
+                placeholder="مثال: ,,07Genius"
+                maxLength={20}
                 dir="ltr"
-                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-center font-mono text-lg tracking-[0.3em] focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none uppercase"
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-center font-mono text-lg tracking-wider focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none"
               />
               <Button
                 onClick={() => handleSetCode(true)}
                 loading={setCodeLoading}
-                disabled={customCode.length < 4 || customCode.length > 8}
+                disabled={customCode.length < 6 || customCode.length > 20}
                 className="whitespace-nowrap"
               >
                 تعيين
               </Button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">اكتب كود من 4 إلى 8 أحرف وأرقام من اختيارك</p>
+            <p className="text-xs text-gray-400 mt-2">اكتب كود من 6 إلى 20 حرف (أحرف، أرقام، رموز - أي شيء ما عدا المسافات)</p>
           </div>
 
           {/* Separator */}
@@ -445,9 +443,7 @@ export default function AdminInspectorsPage() {
           <div className="bg-primary-50 border-2 border-primary-200 rounded-2xl p-6 mb-4">
             <p className="text-xs text-gray-500 mb-2">كود الدخول</p>
             <p className="text-3xl sm:text-4xl font-mono font-bold text-primary-700 tracking-[0.3em]" dir="ltr">
-              {displayCode.length > 4
-                ? `${displayCode.slice(0, 4)}-${displayCode.slice(4)}`
-                : displayCode}
+              {displayCode}
             </p>
           </div>
 

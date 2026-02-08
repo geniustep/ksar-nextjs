@@ -354,10 +354,10 @@ export default function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                      placeholder={inputType === 'phone' ? 'XXXX-XXXX' : '••••••••'}
+                      placeholder={inputType === 'phone' ? 'أدخل كود الدخول' : '••••••••'}
                       required
                       dir="ltr"
-                      maxLength={inputType === 'phone' ? 8 : undefined}
+                      maxLength={inputType === 'phone' ? 20 : undefined}
                       className={cn(
                         'w-full rounded-xl border border-gray-200 pr-11 pl-11 py-3 text-sm transition-all',
                         'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
@@ -417,8 +417,8 @@ export default function LoginPage() {
 
               {/* Role hints */}
               <div className="mt-6 pt-5 border-t border-gray-100">
-                <p className="text-xs text-gray-400 text-center mb-3">من يمكنه الدخول من هنا؟</p>
-                <div className="grid grid-cols-2 gap-2">
+                {/* <p className="text-xs text-gray-400 text-center mb-3">من يمكنه الدخول من هنا؟</p> */}
+                {/* <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: 'المدير / الإدارة', icon: '🔧', hint: 'بريد + كلمة مرور' },
                     { label: 'المراقب', icon: '🛡️', hint: 'هاتف + كود' },
@@ -436,7 +436,7 @@ export default function LoginPage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -460,8 +460,8 @@ export default function LoginPage() {
 
               <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">مؤسسة جديدة؟</p>
-                  <p className="text-xs text-gray-400">سجل مؤسستك وانتظر المصادقة</p>
+                  <p className="text-sm font-medium text-gray-700">جمعية أو مبادرة إنسانية جديدة؟</p>
+                  <p className="text-xs text-gray-400">سجل وانتظر المصادقة</p>
                 </div>
                 <Link
                   href="/org-register"
