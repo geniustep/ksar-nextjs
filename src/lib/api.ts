@@ -340,6 +340,12 @@ export const orgApi = {
       body: JSON.stringify(data),
     });
   },
+
+  cancelAssignment(assignmentId: string): Promise<{ message: string; assignment_id: string }> {
+    return request(`/api/v1/org/assignments/${assignmentId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // === Admin API ===
@@ -575,6 +581,12 @@ export const adminApi = {
       method: 'DELETE',
     });
   },
+
+  cancelAssignment(assignmentId: string): Promise<{ message: string; assignment_id: string }> {
+    return request(`/api/v1/admin/assignments/${assignmentId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // === Organization Auth API ===
@@ -758,6 +770,12 @@ export const inspectorApi = {
 
   getPhoneRequestCount(phone: string): Promise<{ phone: string; count: number }> {
     return request(`/api/v1/inspector/phone-count?phone=${encodeURIComponent(phone)}`);
+  },
+
+  cancelAssignment(assignmentId: string): Promise<{ message: string; assignment_id: string }> {
+    return request(`/api/v1/inspector/assignments/${assignmentId}`, {
+      method: 'DELETE',
+    });
   },
 };
 

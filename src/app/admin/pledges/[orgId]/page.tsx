@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
-import { adminApi } from '@/lib/api';
+import { adminApi, ApiError } from '@/lib/api';
 import { ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_COLORS, CATEGORY_LABELS, REQUEST_STATUS_LABELS, REQUEST_STATUS_COLORS } from '@/lib/constants';
 import type { OrgPledgeItem, RequestCategory, AssignmentStatus, RequestStatus } from '@/lib/types';
 
@@ -22,6 +22,7 @@ export default function AdminOrgPledgesDetailPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const limit = 20;
 
   const loadData = useCallback(async () => {
@@ -42,6 +43,19 @@ export default function AdminOrgPledgesDetailPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleCancelAssignment = async (assignmentId: string) => {
+    if (!confirm('هل أنت متأكد من إلغاء هذا التعهد؟ سيعود الطلب إلى حالته الأولى.')) return;
+    setCancellingId(assignmentId);
+    try {
+      await adminApi.cancelAssignment(assignmentId);
+      loadData();
+    } catch (err) {
+      if (err instanceof ApiError) alert(err.detail);
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const totalPages = Math.ceil(total / limit);
 
@@ -117,7 +131,18 @@ export default function AdminOrgPledgesDetailPage() {
                     <Badge className={REQUEST_STATUS_COLORS[item.request_status as RequestStatus] || 'bg-gray-100'}>
                       {REQUEST_STATUS_LABELS[item.request_status as RequestStatus] || item.request_status}
                     </Badge>
-                    <span className="text-[10px] text-gray-400">{item.assignment_created_at ? new Date(item.assignment_created_at).toLocaleDateString('ar-MA') : '-'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">{item.assignment_created_at ? new Date(item.assignment_created_at).toLocaleDateString('ar-MA') : '-'}</span>
+                      {item.assignment_status !== 'failed' && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelAssignment(item.assignment_id); }}
+                          disabled={cancellingId === item.assignment_id}
+                          className="text-[10px] bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded-lg font-medium transition-colors disabled:opacity-50"
+                        >
+                          {cancellingId === item.assignment_id ? '...' : 'إلغاء'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -163,9 +188,20 @@ export default function AdminOrgPledgesDetailPage() {
                       </td>
                       <td className="py-3 px-3 text-gray-500 text-xs">{item.assignment_created_at ? new Date(item.assignment_created_at).toLocaleDateString('ar-MA') : '-'}</td>
                       <td className="py-3 px-3 text-center">
-                        <Link href={`/admin/requests/${item.request_id}`} className="text-xs bg-primary-50 text-primary-700 hover:bg-primary-100 px-3 py-1.5 rounded-lg transition-colors">
-                          تفاصيل الطلب
-                        </Link>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Link href={`/admin/requests/${item.request_id}`} className="text-xs bg-primary-50 text-primary-700 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                            تفاصيل
+                          </Link>
+                          {item.assignment_status !== 'failed' && (
+                            <button
+                              onClick={() => handleCancelAssignment(item.assignment_id)}
+                              disabled={cancellingId === item.assignment_id}
+                              className="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2.5 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                              {cancellingId === item.assignment_id ? '...' : 'إلغاء'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

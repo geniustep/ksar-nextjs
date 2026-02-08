@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
+import Modal from '@/components/ui/Modal';
 import { inspectorApi } from '@/lib/api';
 import { CATEGORY_LABELS, ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_COLORS } from '@/lib/constants';
 import type { OrganizationWithAssignments, RequestCategory, AssignmentStatus } from '@/lib/types';
@@ -14,6 +15,10 @@ export default function InspectorOrganizationsPage() {
   const [loading, setLoading] = useState(true);
   const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelAssignmentId, setCancelAssignmentId] = useState<string | null>(null);
+  const [cancelOrgName, setCancelOrgName] = useState('');
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
     loadOrganizations();
@@ -27,6 +32,28 @@ export default function InspectorOrganizationsPage() {
       console.error('Failed to load organizations:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openCancelModal = (assignmentId: string, orgName: string) => {
+    setCancelAssignmentId(assignmentId);
+    setCancelOrgName(orgName);
+    setCancelModalOpen(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelAssignmentId) return;
+    setCancelLoading(true);
+    try {
+      await inspectorApi.cancelAssignment(cancelAssignmentId);
+      setCancelModalOpen(false);
+      setCancelAssignmentId(null);
+      await loadOrganizations();
+    } catch (err) {
+      console.error('Failed to cancel assignment:', err);
+      alert('فشل في إلغاء التعهد');
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -187,7 +214,7 @@ export default function InspectorOrganizationsPage() {
                       </h4>
                       <div className="space-y-2 sm:space-y-3">
                         {org.active_assignments.map((assignment) => (
-                          <div key={assignment.id} className="bg-gray-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-gray-100">
+                          <div key={assignment.id} className={`rounded-lg sm:rounded-xl p-2.5 sm:p-4 border ${assignment.status === 'pledged' ? 'bg-amber-50/50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
@@ -201,7 +228,11 @@ export default function InspectorOrganizationsPage() {
                                     <span className="text-red-500 text-[10px]">🔴</span>
                                   )}
                                 </div>
-                                <p className="text-xs sm:text-sm text-gray-800 font-medium truncate">{assignment.request.requester_name}</p>
+                                {assignment.status === 'pledged' ? (
+                                  <p className="text-xs sm:text-sm text-amber-600 font-medium italic">في انتظار المصادقة</p>
+                                ) : (
+                                  <p className="text-xs sm:text-sm text-gray-800 font-medium truncate">{assignment.request.requester_name}</p>
+                                )}
                                 {assignment.request.description && (
                                   <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 line-clamp-1">{assignment.request.description}</p>
                                 )}
@@ -210,12 +241,20 @@ export default function InspectorOrganizationsPage() {
                                   <span>👨‍👩‍👧‍👦 {assignment.request.family_members}</span>
                                 </div>
                               </div>
-                              <Link
-                                href={`/inspector/requests/${assignment.request.id}`}
-                                className="text-[10px] sm:text-xs bg-primary-50 text-primary-700 hover:bg-primary-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium flex-shrink-0"
-                              >
-                                عرض
-                              </Link>
+                              <div className="flex flex-col gap-1 flex-shrink-0">
+                                <Link
+                                  href={`/inspector/requests/${assignment.request.id}`}
+                                  className="text-[10px] sm:text-xs bg-primary-50 text-primary-700 hover:bg-primary-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium text-center"
+                                >
+                                  عرض
+                                </Link>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); openCancelModal(assignment.id, org.name); }}
+                                  className="text-[10px] sm:text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium transition-colors"
+                                >
+                                  إلغاء التعهد
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -228,6 +267,35 @@ export default function InspectorOrganizationsPage() {
           ))}
         </div>
       )}
+      {/* Cancel Assignment Modal */}
+      <Modal isOpen={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title="إلغاء التعهد">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <p className="text-gray-700 mb-2">
+            هل أنت متأكد من إلغاء هذا التعهد؟
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            سيتم إلغاء تعهد مؤسسة <span className="font-bold text-gray-700">{cancelOrgName}</span> بهذا الطلب.
+            {' '}إذا كان التعهد معتمداً، سيعود الطلب إلى حالة &quot;جديد&quot;.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={confirmCancel}
+              disabled={cancelLoading}
+              className="flex-1 bg-red-600 text-white py-2.5 rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              {cancelLoading ? 'جاري الإلغاء...' : 'تأكيد الإلغاء'}
+            </button>
+            <button
+              onClick={() => setCancelModalOpen(false)}
+              disabled={cancelLoading}
+              className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+            >
+              تراجع
+            </button>
+          </div>
+        </div>
+      </Modal>
     </DashboardLayout>
   );
 }

@@ -442,6 +442,7 @@ export interface InspectorRequestResponse {
   is_flagged?: number;
   flag_reason?: string | null;
   flagged_at?: string | null;
+  inspector_name?: string | null;
   flagged_by_name?: string | null;
   inspector_id: string | null;
   inspector_notes: string | null;

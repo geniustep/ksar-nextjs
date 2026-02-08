@@ -28,6 +28,7 @@ export default function AssignmentDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
   const [failureReason, setFailureReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -42,6 +43,19 @@ export default function AssignmentDetailPage() {
       else setError('خطأ في تحميل البيانات');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelAssignment = async () => {
+    if (!confirm('هل أنت متأكد من إلغاء هذا التعهد؟ سيتم إرجاع الطلب إلى حالته الأولى.')) return;
+    setCancelling(true);
+    try {
+      await orgApi.cancelAssignment(params.id as string);
+      router.push('/org/assignments');
+    } catch (err) {
+      if (err instanceof ApiError) alert(err.detail);
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -118,11 +132,22 @@ export default function AssignmentDetailPage() {
 
       {/* Waiting notice */}
       {assignment.status === 'pledged' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-          <span className="text-xl sm:text-2xl">⏳</span>
-          <div>
-            <p className="font-medium text-amber-800 text-sm">في انتظار موافقة المراقب</p>
-            <p className="text-xs text-amber-600">سيتم إبلاغك عند الموافقة</p>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-xl sm:text-2xl">⏳</span>
+              <div>
+                <p className="font-medium text-amber-800 text-sm">في انتظار موافقة المراقب</p>
+                <p className="text-xs text-amber-600">سيتم إبلاغك عند الموافقة</p>
+              </div>
+            </div>
+            <button
+              onClick={handleCancelAssignment}
+              disabled={cancelling}
+              className="text-xs bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 flex-shrink-0"
+            >
+              {cancelling ? 'جاري...' : 'إلغاء التعهد'}
+            </button>
           </div>
         </div>
       )}
@@ -268,6 +293,19 @@ export default function AssignmentDetailPage() {
                 >
                   فشل التسليم
                 </Button>
+              </div>
+
+              {/* Cancel - revert */}
+              <div className="bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-200">
+                <p className="text-sm text-gray-700 mb-2 font-medium">إلغاء التعهد وإرجاع الحالة</p>
+                <p className="text-xs text-gray-500 mb-3">سيتم إلغاء هذا التعهد وسيعود الطلب إلى حالته الأولى (في انتظار التكفل)</p>
+                <button
+                  onClick={handleCancelAssignment}
+                  disabled={cancelling}
+                  className="text-xs sm:text-sm bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-50"
+                >
+                  {cancelling ? 'جاري الإلغاء...' : 'إلغاء التعهد'}
+                </button>
               </div>
             </div>
           </Card>

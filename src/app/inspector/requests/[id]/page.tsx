@@ -64,6 +64,7 @@ export default function InspectorRequestDetailPage() {
   const [showActivateModal, setShowActivateModal] = useState(false);
   const [activateIsUrgent, setActivateIsUrgent] = useState(false);
   const [activatePriority, setActivatePriority] = useState<string>('');
+  const [cancellingAssignmentId, setCancellingAssignmentId] = useState<string | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -199,6 +200,19 @@ export default function InspectorRequestDetailPage() {
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
     } finally { setActionLoading(false); }
+  };
+
+  const handleCancelAssignment = async (assignmentId: string) => {
+    if (!confirm('هل أنت متأكد من إلغاء هذا التعهد؟ سيعود الطلب إلى حالته الأولى.')) return;
+    setCancellingAssignmentId(assignmentId);
+    setError(''); setSuccess('');
+    try {
+      const result = await inspectorApi.cancelAssignment(assignmentId);
+      setSuccess(result.message);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ في إلغاء التعهد');
+    } finally { setCancellingAssignmentId(null); }
   };
 
   const handleApproveOrg = async (assignmentId: string) => {
@@ -428,7 +442,7 @@ export default function InspectorRequestDetailPage() {
           <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
             <p className="text-xs text-amber-800">
               <span className="font-medium">مكلف به:</span>{' '}
-              {`#${request.inspector_id?.slice(0, 8)}`}
+              {request.inspector_name || `#${request.inspector_id?.slice(0, 8)}`}
             </p>
           </div>
         ) : null}
@@ -583,7 +597,7 @@ export default function InspectorRequestDetailPage() {
                   <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
                     <span className="text-[10px] sm:text-xs text-gray-400">المراقب:</span>
                     <Badge className="bg-indigo-50 text-indigo-700 text-[10px] sm:text-xs">
-                      {isSupervisor ? 'أنت' : `#${request.inspector_id.slice(0, 8)}`}
+                      {isSupervisor ? 'أنت' : (request.inspector_name || `#${request.inspector_id.slice(0, 8)}`)}
                     </Badge>
                   </div>
                 )}
@@ -683,10 +697,19 @@ export default function InspectorRequestDetailPage() {
 
               {pledgesData.approved && (
                 <div className="mt-3 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-xl">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-green-600 font-bold">✓</span>
-                    <span className="font-medium text-green-800 text-sm">{pledgesData.approved.org_name}</span>
-                    <Badge className="bg-green-100 text-green-700 text-[10px] sm:text-xs">{pledgesData.approved.status}</Badge>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600 font-bold">✓</span>
+                      <span className="font-medium text-green-800 text-sm">{pledgesData.approved.org_name}</span>
+                      <Badge className="bg-green-100 text-green-700 text-[10px] sm:text-xs">{pledgesData.approved.status}</Badge>
+                    </div>
+                    <button
+                      onClick={() => handleCancelAssignment(pledgesData.approved!.assignment_id)}
+                      disabled={cancellingAssignmentId === pledgesData.approved.assignment_id}
+                      className="text-[10px] sm:text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {cancellingAssignmentId === pledgesData.approved.assignment_id ? '...' : 'إلغاء التعهد'}
+                    </button>
                   </div>
                   {pledgesData.approved.org_phone && (
                     <p className="text-xs text-green-600" dir="ltr">{pledgesData.approved.org_phone}</p>
@@ -706,10 +729,19 @@ export default function InspectorRequestDetailPage() {
                             {pledge.org_phone && <span className="mr-2" dir="ltr">{pledge.org_phone}</span>}
                           </p>
                         </div>
-                        <Button size="sm" onClick={() => {
-                          setShowApproveForm(showApproveForm === pledge.assignment_id ? null : pledge.assignment_id);
-                          setApproveShowPhone(false); setApproveContactName(''); setApproveContactPhone('');
-                        }}>الموافقة</Button>
+                        <div className="flex gap-1.5">
+                          <Button size="sm" onClick={() => {
+                            setShowApproveForm(showApproveForm === pledge.assignment_id ? null : pledge.assignment_id);
+                            setApproveShowPhone(false); setApproveContactName(''); setApproveContactPhone('');
+                          }}>الموافقة</Button>
+                          <button
+                            onClick={() => handleCancelAssignment(pledge.assignment_id)}
+                            disabled={cancellingAssignmentId === pledge.assignment_id}
+                            className="text-[10px] sm:text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 sm:py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                          >
+                            {cancellingAssignmentId === pledge.assignment_id ? '...' : 'إلغاء'}
+                          </button>
+                        </div>
                       </div>
                       {pledge.notes && (
                         <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded-lg">{pledge.notes}</p>
@@ -770,7 +802,7 @@ export default function InspectorRequestDetailPage() {
                 <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
                   <p className="text-xs text-amber-800">
                     <span className="font-medium">مكلف به:</span>{' '}
-                    {`#${request.inspector_id?.slice(0, 8)}`}
+                    {request.inspector_name || `#${request.inspector_id?.slice(0, 8)}`}
                   </p>
                 </div>
               )}

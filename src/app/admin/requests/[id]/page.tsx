@@ -37,6 +37,7 @@ export default function AdminRequestDetailPage() {
   const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadRequest();
@@ -74,6 +75,19 @@ export default function AdminRequestDetailPage() {
       if (err instanceof ApiError) alert(err.detail);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancelAssignment = async (assignmentId: string) => {
+    if (!confirm('هل أنت متأكد من إلغاء هذا التعهد؟ سيعود الطلب إلى حالته الأولى.')) return;
+    setCancellingId(assignmentId);
+    try {
+      await adminApi.cancelAssignment(assignmentId);
+      loadRequest();
+    } catch (err) {
+      if (err instanceof ApiError) alert(err.detail);
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -234,11 +248,22 @@ export default function AdminRequestDetailPage() {
             <h2 className="text-lg font-semibold mb-3">التكفلات</h2>
             <div className="space-y-2">
               {request.assignments.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <Badge className={ASSIGNMENT_STATUS_COLORS[a.status as AssignmentStatus]}>
-                    {ASSIGNMENT_STATUS_LABELS[a.status as AssignmentStatus]}
-                  </Badge>
-                  <span className="text-sm text-gray-500">{formatDateTime(a.created_at)}</span>
+                <div key={a.id} className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <Badge className={ASSIGNMENT_STATUS_COLORS[a.status as AssignmentStatus]}>
+                      {ASSIGNMENT_STATUS_LABELS[a.status as AssignmentStatus]}
+                    </Badge>
+                    <span className="text-sm text-gray-500">{formatDateTime(a.created_at)}</span>
+                  </div>
+                  {a.status !== 'failed' && (
+                    <button
+                      onClick={() => handleCancelAssignment(a.id)}
+                      disabled={cancellingId === a.id}
+                      className="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {cancellingId === a.id ? 'جاري...' : 'إلغاء التعهد'}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
