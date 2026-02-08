@@ -151,7 +151,7 @@ export default function OrgRegisterPage() {
             <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 text-center mb-6">
               <p className="text-sm text-primary-700 mb-1">لديك حساب جمعية أو مبادرة إنسانية بالفعل؟</p>
               <Link
-                href="/org-auth"
+                href="/login"
                 className="text-sm text-primary-700 font-semibold hover:text-primary-800 underline"
               >
                 اذهب لصفحة دخول الجمعيات والمبادرات الإنسانية

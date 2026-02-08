@@ -244,7 +244,7 @@ export default function AdminOrganizationsPage() {
   };
 
   const copyFullInfo = async () => {
-    const text = `المؤسسة: ${displayName}\nرقم الهاتف: ${displayPhone}\nكود الدخول: ${displayCode}\n\nرابط الدخول: ${window.location.origin}/org-auth`;
+    const text = `المؤسسة: ${displayName}\nرقم الهاتف: ${displayPhone}\nكود الدخول: ${displayCode}\n\nرابط الدخول: ${window.location.origin}/login`;
     await navigator.clipboard.writeText(text);
     setFullInfoCopied(true);
     setTimeout(() => setFullInfoCopied(false), 2000);
@@ -688,7 +688,7 @@ export default function AdminOrganizationsPage() {
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-sm text-right">
             <p className="text-gray-500 mb-1">رابط الدخول:</p>
             <p className="text-primary-600 font-inter" dir="ltr">
-              {typeof window !== 'undefined' ? window.location.origin : ''}/org-auth
+              {typeof window !== 'undefined' ? window.location.origin : ''}/login
             </p>
           </div>
 
