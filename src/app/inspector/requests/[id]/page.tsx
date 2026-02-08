@@ -10,6 +10,7 @@ import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
+import Modal from '@/components/ui/Modal';
 import { inspectorApi, ApiError } from '@/lib/api';
 import {
   REQUEST_STATUS_LABELS,
@@ -54,6 +55,11 @@ export default function InspectorRequestDetailPage() {
 
   const [showFlagForm, setShowFlagForm] = useState(false);
   const [flagReason, setFlagReason] = useState('');
+
+  // Activate modal
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [activateIsUrgent, setActivateIsUrgent] = useState(false);
+  const [activatePriority, setActivatePriority] = useState<string>('');
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -115,10 +121,30 @@ export default function InspectorRequestDetailPage() {
     }
   };
 
-  const handleActivate = async () => {
+  const openActivateModal = () => {
+    setActivateIsUrgent(false);
+    setActivatePriority(request?.priority_score ? String(request.priority_score) : '');
+    setShowActivateModal(true);
+  };
+
+  const confirmActivate = async () => {
+    if (!activateIsUrgent && !activatePriority) {
+      setError('يرجى تحديد الأولوية أو تفعيل الاستعجال');
+      return;
+    }
+    const priorityNum = activateIsUrgent ? undefined : parseInt(activatePriority);
+    if (!activateIsUrgent && (isNaN(priorityNum!) || priorityNum! < 0 || priorityNum! > 100)) {
+      setError('الأولوية يجب أن تكون بين 0 و 100');
+      return;
+    }
     setActionLoading(true); setError(''); setSuccess('');
     try {
-      await inspectorApi.activateRequest(requestId, inspectorNotes || undefined);
+      await inspectorApi.activateRequest(requestId, {
+        is_urgent: activateIsUrgent,
+        priority_score: activateIsUrgent ? undefined : priorityNum,
+        inspector_notes: inspectorNotes || undefined,
+      });
+      setShowActivateModal(false);
       setSuccess('تم تفعيل الطلب بنجاح');
       await loadData();
     } catch (err) {
@@ -708,7 +734,7 @@ export default function InspectorRequestDetailPage() {
             <CardTitle>الإجراءات</CardTitle>
             <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
               {canActivate && (
-                <Button className="w-full text-xs sm:text-sm" onClick={handleActivate} loading={actionLoading}>تفعيل الطلب</Button>
+                <Button className="w-full text-xs sm:text-sm" onClick={openActivateModal} loading={actionLoading}>تفعيل الطلب</Button>
               )}
               {canAssign && (
                 <Button variant="secondary" className="w-full text-xs sm:text-sm" onClick={() => setShowAssignForm(!showAssignForm)}>ربط بجمعية</Button>
@@ -794,6 +820,77 @@ export default function InspectorRequestDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Activate Request Modal */}
+      <Modal isOpen={showActivateModal} onClose={() => setShowActivateModal(false)} title="تفعيل الطلب">
+        <div className="space-y-4">
+          {/* Urgent toggle */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <div>
+              <p className="text-sm font-medium text-gray-700">طلب مستعجل</p>
+              <p className="text-xs text-gray-400 mt-0.5">الأولوية ستكون 100 تلقائيا</p>
+            </div>
+            <button
+              onClick={() => setActivateIsUrgent(!activateIsUrgent)}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${activateIsUrgent ? 'bg-red-500' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${activateIsUrgent ? 'translate-x-1' : 'translate-x-6'}`} />
+            </button>
+          </div>
+
+          {/* Priority field - only when NOT urgent */}
+          {!activateIsUrgent && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">درجة الأولوية (0-100)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={activatePriority}
+                  onChange={(e) => setActivatePriority(e.target.value)}
+                  placeholder="أدخل الأولوية..."
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-lg font-semibold focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-2">خيارات سريعة:</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[25, 50, 75, 90].map((val) => (
+                    <button
+                      key={val}
+                      onClick={() => setActivatePriority(String(val))}
+                      className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${
+                        activatePriority === String(val)
+                          ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700'
+                      }`}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirm button */}
+          <div className="flex gap-3 pt-2">
+            <Button
+              className="flex-1"
+              onClick={confirmActivate}
+              loading={actionLoading}
+              disabled={!activateIsUrgent && !activatePriority}
+            >
+              تأكيد التفعيل
+            </Button>
+            <Button variant="ghost" onClick={() => setShowActivateModal(false)}>
+              إلغاء
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </DashboardLayout>
   );
 }

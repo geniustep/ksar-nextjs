@@ -625,10 +625,10 @@ export const inspectorApi = {
     return request(`/api/v1/inspector/requests/${requestId}`);
   },
 
-  activateRequest(requestId: string, notes?: string): Promise<{ message: string; data: RequestResponse }> {
+  activateRequest(requestId: string, data?: { is_urgent?: boolean; priority_score?: number; inspector_notes?: string }): Promise<{ message: string; data: RequestResponse }> {
     return request(`/api/v1/inspector/requests/${requestId}/activate`, {
       method: 'PATCH',
-      body: JSON.stringify(notes ? { inspector_notes: notes } : {}),
+      body: JSON.stringify(data || {}),
     });
   },
 

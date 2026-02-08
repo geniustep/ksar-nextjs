@@ -9,6 +9,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import Input from '@/components/ui/Input';
+import Modal from '@/components/ui/Modal';
 import Spinner from '@/components/ui/Spinner';
 import { inspectorApi, ApiError } from '@/lib/api';
 import {
@@ -49,6 +50,12 @@ function InspectorRequestsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [urgentOnly, setUrgentOnly] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
+
+  // Activate modal
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [activateRequestId, setActivateRequestId] = useState<string | null>(null);
+  const [activateIsUrgent, setActivateIsUrgent] = useState(false);
+  const [activatePriority, setActivatePriority] = useState<string>('');
 
   const limit = 20;
 
@@ -91,10 +98,31 @@ function InspectorRequestsContent() {
     loadRequests();
   }, [loadRequests]);
 
-  const handleActivate = async (requestId: string) => {
-    setActionLoading(requestId);
+  const openActivateModal = (requestId: string) => {
+    setActivateRequestId(requestId);
+    setActivateIsUrgent(false);
+    setActivatePriority('');
+    setShowActivateModal(true);
+  };
+
+  const confirmActivate = async () => {
+    if (!activateRequestId) return;
+    if (!activateIsUrgent && !activatePriority) {
+      alert('يرجى تحديد الأولوية أو تفعيل الاستعجال');
+      return;
+    }
+    const priorityNum = activateIsUrgent ? undefined : parseInt(activatePriority);
+    if (!activateIsUrgent && (isNaN(priorityNum!) || priorityNum! < 0 || priorityNum! > 100)) {
+      alert('الأولوية يجب أن تكون بين 0 و 100');
+      return;
+    }
+    setActionLoading(activateRequestId);
     try {
-      await inspectorApi.activateRequest(requestId);
+      await inspectorApi.activateRequest(activateRequestId, {
+        is_urgent: activateIsUrgent,
+        priority_score: activateIsUrgent ? undefined : priorityNum,
+      });
+      setShowActivateModal(false);
       await loadRequests();
     } catch (err) {
       if (err instanceof ApiError) alert(err.detail);
@@ -253,7 +281,7 @@ function InspectorRequestsContent() {
                   {req.status === 'pending' && (
                     <div className="flex gap-2 pt-2 border-t border-gray-50">
                       <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(req.id); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); openActivateModal(req.id); }}
                         disabled={actionLoading === req.id}
                         className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-lg flex-1 disabled:opacity-50"
                       >
@@ -339,7 +367,7 @@ function InspectorRequestsContent() {
                         <div className="flex gap-1">
                           {req.status === 'pending' && (
                             <>
-                              <button onClick={() => handleActivate(req.id)} disabled={actionLoading === req.id} className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded-lg disabled:opacity-50">تفعيل</button>
+                              <button onClick={() => openActivateModal(req.id)} disabled={actionLoading === req.id} className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded-lg disabled:opacity-50">تفعيل</button>
                               <button onClick={() => handleReject(req.id)} disabled={actionLoading === req.id} className="text-xs bg-red-50 text-red-700 hover:bg-red-100 px-2 py-1 rounded-lg disabled:opacity-50">رفض</button>
                             </>
                           )}
@@ -363,6 +391,76 @@ function InspectorRequestsContent() {
           )}
         </>
       )}
+      {/* Activate Request Modal */}
+      <Modal isOpen={showActivateModal} onClose={() => setShowActivateModal(false)} title="تفعيل الطلب">
+        <div className="space-y-4">
+          {/* Urgent toggle */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <div>
+              <p className="text-sm font-medium text-gray-700">طلب مستعجل</p>
+              <p className="text-xs text-gray-400 mt-0.5">الأولوية ستكون 100 تلقائيا</p>
+            </div>
+            <button
+              onClick={() => setActivateIsUrgent(!activateIsUrgent)}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${activateIsUrgent ? 'bg-red-500' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${activateIsUrgent ? 'translate-x-1' : 'translate-x-6'}`} />
+            </button>
+          </div>
+
+          {/* Priority field - only when NOT urgent */}
+          {!activateIsUrgent && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">درجة الأولوية (0-100)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={activatePriority}
+                  onChange={(e) => setActivatePriority(e.target.value)}
+                  placeholder="أدخل الأولوية..."
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-lg font-semibold focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-2">خيارات سريعة:</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[25, 50, 75, 90].map((val) => (
+                    <button
+                      key={val}
+                      onClick={() => setActivatePriority(String(val))}
+                      className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${
+                        activatePriority === String(val)
+                          ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700'
+                      }`}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirm button */}
+          <div className="flex gap-3 pt-2">
+            <Button
+              className="flex-1"
+              onClick={confirmActivate}
+              loading={actionLoading === activateRequestId}
+              disabled={!activateIsUrgent && !activatePriority}
+            >
+              تأكيد التفعيل
+            </Button>
+            <Button variant="ghost" onClick={() => setShowActivateModal(false)}>
+              إلغاء
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </DashboardLayout>
   );
 }
