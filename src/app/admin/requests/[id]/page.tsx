@@ -115,7 +115,8 @@ export default function AdminRequestDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
         <div>
           <button
             onClick={() => router.push('/admin/requests')}
@@ -123,56 +124,53 @@ export default function AdminRequestDetailPage() {
           >
             &larr; العودة للطلبات
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">تفاصيل الطلب</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">تفاصيل الطلب</h1>
         </div>
-        <Button variant="danger" onClick={handleDelete}>
+        <Button variant="danger" size="sm" onClick={handleDelete}>
           حذف الطلب
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Request info */}
         <Card>
           <h2 className="text-lg font-semibold mb-4">بيانات الطلب</h2>
           <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-500">الاسم</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">الاسم</span>
               <span className="font-medium">{request.requester_name}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">الهاتف</span>
-              <span dir="ltr">{request.requester_phone}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">الهاتف</span>
+              <span dir="ltr" className="font-mono text-sm">{request.requester_phone}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">التصنيف</span>
-              <span>
-                {CATEGORY_ICONS[request.category]}{' '}
-                {CATEGORY_LABELS[request.category]}
-              </span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">التصنيف</span>
+              <span>{CATEGORY_ICONS[request.category]} {CATEGORY_LABELS[request.category]}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">الحالة</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">الحالة</span>
               <Badge className={REQUEST_STATUS_COLORS[request.status]}>
                 {REQUEST_STATUS_LABELS[request.status]}
               </Badge>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">الأولوية</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">الأولوية</span>
               <span className={`font-bold ${request.is_urgent ? 'text-red-600' : ''}`}>
                 {request.priority_score}/100
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">الكمية</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">الكمية</span>
               <span>{request.quantity}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">أفراد الأسرة</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">أفراد الأسرة</span>
               <span>{request.family_members}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">مستعجل</span>
-              <span>{request.is_urgent ? 'نعم' : 'لا'}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-sm">مستعجل</span>
+              <span>{request.is_urgent ? '🔴 نعم' : 'لا'}</span>
             </div>
           </div>
         </Card>
@@ -183,27 +181,27 @@ export default function AdminRequestDetailPage() {
           <div className="space-y-3">
             <div>
               <span className="text-gray-500 text-sm">العنوان</span>
-              <p className="mt-1">{request.address}</p>
+              <p className="mt-1 text-gray-900">{request.address || '-'}</p>
             </div>
             {request.city && (
               <div className="flex justify-between">
-                <span className="text-gray-500">المدينة</span>
+                <span className="text-gray-500 text-sm">المدينة</span>
                 <span>{request.city}</span>
               </div>
             )}
             {request.region && (
               <div className="flex justify-between">
-                <span className="text-gray-500">المنطقة</span>
+                <span className="text-gray-500 text-sm">المنطقة</span>
                 <span>{request.region}</span>
               </div>
             )}
             {request.latitude && request.longitude && (
               <div className="flex justify-between">
-                <span className="text-gray-500">الإحداثيات</span>
-                <span dir="ltr" className="text-sm">{request.latitude}, {request.longitude}</span>
+                <span className="text-gray-500 text-sm">الإحداثيات</span>
+                <span dir="ltr" className="text-xs font-mono">{request.latitude}, {request.longitude}</span>
               </div>
             )}
-            <div className="pt-2 border-t space-y-2 text-sm">
+            <div className="pt-3 border-t space-y-2 text-sm">
               <div className="flex justify-between text-gray-400">
                 <span>تاريخ الإنشاء</span>
                 <span>{formatDateTime(request.created_at)}</span>
@@ -227,7 +225,7 @@ export default function AdminRequestDetailPage() {
         {/* Description */}
         <Card className="lg:col-span-2">
           <h2 className="text-lg font-semibold mb-3">الوصف</h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{request.description}</p>
+          <p className="text-gray-700 whitespace-pre-wrap text-sm sm:text-base">{request.description || '-'}</p>
         </Card>
 
         {/* Assignments */}
@@ -236,13 +234,11 @@ export default function AdminRequestDetailPage() {
             <h2 className="text-lg font-semibold mb-3">التكفلات</h2>
             <div className="space-y-2">
               {request.assignments.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div key={a.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <Badge className={ASSIGNMENT_STATUS_COLORS[a.status as AssignmentStatus]}>
                     {ASSIGNMENT_STATUS_LABELS[a.status as AssignmentStatus]}
                   </Badge>
-                  <span className="text-sm text-gray-500">
-                    {formatDateTime(a.created_at)}
-                  </span>
+                  <span className="text-sm text-gray-500">{formatDateTime(a.created_at)}</span>
                 </div>
               ))}
             </div>
@@ -253,7 +249,7 @@ export default function AdminRequestDetailPage() {
         <Card className="lg:col-span-2">
           <h2 className="text-lg font-semibold mb-4">تحديث الطلب</h2>
           {saveMsg && (
-            <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-lg mb-4">
+            <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-xl mb-4">
               {saveMsg}
             </div>
           )}

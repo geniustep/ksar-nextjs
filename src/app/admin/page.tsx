@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
-import StatsCard from '@/components/ui/StatsCard';
 import { Card, CardTitle } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import { adminApi } from '@/lib/api';
-import { CATEGORY_LABELS, REQUEST_STATUS_LABELS } from '@/lib/constants';
+import { CATEGORY_LABELS, CATEGORY_ICONS, REQUEST_STATUS_LABELS, REQUEST_STATUS_COLORS } from '@/lib/constants';
 import type { RequestCategory, RequestStatus } from '@/lib/types';
 
 interface OverviewData {
@@ -36,6 +37,17 @@ interface OrgStatItem {
   total_assignments: number;
   completed: number;
 }
+
+// Status colors for mini badges in stats
+const STATUS_DOT_COLORS: Record<string, string> = {
+  pending: 'bg-purple-500',
+  new: 'bg-blue-500',
+  assigned: 'bg-yellow-500',
+  in_progress: 'bg-orange-500',
+  completed: 'bg-green-500',
+  cancelled: 'bg-red-500',
+  rejected: 'bg-gray-500',
+};
 
 export default function AdminDashboard() {
   const [overview, setOverview] = useState<OverviewData | null>(null);
@@ -77,57 +89,87 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">لوحة الإحصائيات</h1>
-        <p className="text-gray-500 mt-1">نظرة عامة على نظام المساعدات</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">لوحة الإحصائيات</h1>
+        <p className="text-gray-500 text-sm mt-1">نظرة عامة على نظام المساعدات</p>
       </div>
 
       {overview && (
         <>
-          {/* Top Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatsCard
-              title="إجمالي الطلبات"
-              value={overview.total_requests}
-              color="text-primary-600"
-            />
-            <StatsCard
-              title="طلبات مستعجلة"
-              value={overview.urgent_count}
-              color="text-red-600"
-            />
-            <StatsCard
-              title="المؤسسات النشطة"
-              value={overview.active_organizations}
-              color="text-green-600"
-            />
-            <StatsCard
-              title="متوسط وقت الإنجاز"
-              value={overview.avg_completion_hours ? `${overview.avg_completion_hours}h` : '-'}
-              subtitle="بالساعات"
-              color="text-orange-600"
-            />
+          {/* Quick Stats - 2x2 on mobile, 4 cols on desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            {/* Total Requests */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center text-sm">📊</div>
+                <span className="text-xs sm:text-sm text-gray-500">إجمالي الطلبات</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-primary-600">{overview.total_requests}</p>
+            </div>
+
+            {/* Urgent */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-sm">🔴</div>
+                <span className="text-xs sm:text-sm text-gray-500">مستعجلة</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-red-600">{overview.urgent_count}</p>
+            </div>
+
+            {/* Active Orgs */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-sm">🏢</div>
+                <span className="text-xs sm:text-sm text-gray-500">المؤسسات</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-green-600">{overview.active_organizations}</p>
+            </div>
+
+            {/* Avg completion */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-sm">⏱️</div>
+                <span className="text-xs sm:text-sm text-gray-500">متوسط الإنجاز</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-orange-600">
+                {overview.avg_completion_hours ? `${overview.avg_completion_hours}h` : '-'}
+              </p>
+              <p className="text-[10px] text-gray-400">بالساعات</p>
+            </div>
           </div>
 
-          {/* Status breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Status + Category breakdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+            {/* By Status */}
             <Card>
-              <CardTitle>الطلبات حسب الحالة</CardTitle>
-              <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between mb-4">
+                <CardTitle>حسب الحالة</CardTitle>
+                <Link href="/admin/requests" className="text-xs text-primary-600 hover:text-primary-700">
+                  عرض الكل
+                </Link>
+              </div>
+              <div className="space-y-3">
                 {Object.entries(overview.by_status).map(([status, count]) => {
                   const percentage = overview.total_requests > 0
                     ? Math.round((count / overview.total_requests) * 100)
                     : 0;
                   return (
                     <div key={status}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>{REQUEST_STATUS_LABELS[status as RequestStatus] || status}</span>
-                        <span className="text-gray-500">{count} ({percentage}%)</span>
+                      <div className="flex items-center justify-between text-sm mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${STATUS_DOT_COLORS[status] || 'bg-gray-400'}`} />
+                          <span className="text-gray-700">{REQUEST_STATUS_LABELS[status as RequestStatus] || status}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-900 font-semibold tabular-nums">{count}</span>
+                          <span className="text-gray-400 text-xs w-8 text-left">{percentage}%</span>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
                         <div
-                          className="bg-primary-500 h-2 rounded-full transition-all"
-                          style={{ width: `${percentage}%` }}
+                          className={`h-1.5 rounded-full transition-all ${STATUS_DOT_COLORS[status] || 'bg-gray-400'}`}
+                          style={{ width: `${Math.max(percentage, 1)}%` }}
                         />
                       </div>
                     </div>
@@ -136,9 +178,10 @@ export default function AdminDashboard() {
               </div>
             </Card>
 
+            {/* By Category */}
             <Card>
-              <CardTitle>الطلبات حسب التصنيف</CardTitle>
-              <div className="mt-4 space-y-3">
+              <CardTitle className="mb-4">حسب التصنيف</CardTitle>
+              <div className="space-y-3">
                 {Object.entries(overview.by_category)
                   .sort((a, b) => b[1] - a[1])
                   .map(([category, count]) => {
@@ -147,14 +190,20 @@ export default function AdminDashboard() {
                       : 0;
                     return (
                       <div key={category}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>{CATEGORY_LABELS[category as RequestCategory] || category}</span>
-                          <span className="text-gray-500">{count} ({percentage}%)</span>
+                        <div className="flex items-center justify-between text-sm mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{CATEGORY_ICONS[category as RequestCategory] || '📦'}</span>
+                            <span className="text-gray-700">{CATEGORY_LABELS[category as RequestCategory] || category}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900 font-semibold tabular-nums">{count}</span>
+                            <span className="text-gray-400 text-xs w-8 text-left">{percentage}%</span>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
                           <div
-                            className="bg-accent-500 h-2 rounded-full transition-all"
-                            style={{ width: `${percentage}%` }}
+                            className="bg-accent-500 h-1.5 rounded-full transition-all"
+                            style={{ width: `${Math.max(percentage, 1)}%` }}
                           />
                         </div>
                       </div>
@@ -166,41 +215,64 @@ export default function AdminDashboard() {
         </>
       )}
 
-      {/* Daily chart (simple bar chart) */}
+      {/* Daily chart */}
       {daily.length > 0 && (
-        <Card className="mb-8">
-          <CardTitle>الطلبات اليومية (آخر 14 يوم)</CardTitle>
-          <div className="mt-4 flex items-end gap-1 h-40">
-            {daily.map((d) => {
-              const maxCount = Math.max(...daily.map((x) => x.count), 1);
-              const height = (d.count / maxCount) * 100;
-              return (
-                <div
-                  key={d.date}
-                  className="flex-1 flex flex-col items-center"
-                  title={`${d.date}: ${d.count} طلب`}
-                >
-                  <span className="text-xs text-gray-400 mb-1">{d.count}</span>
+        <Card className="mb-6">
+          <CardTitle className="mb-4">الطلبات اليومية (آخر 14 يوم)</CardTitle>
+          <div className="overflow-x-auto -mx-2">
+            <div className="flex items-end gap-1 h-36 sm:h-44 min-w-[400px] px-2">
+              {daily.map((d) => {
+                const maxCount = Math.max(...daily.map((x) => x.count), 1);
+                const height = (d.count / maxCount) * 100;
+                return (
                   <div
-                    className="w-full bg-primary-400 rounded-t min-h-[4px]"
-                    style={{ height: `${Math.max(height, 3)}%` }}
-                  />
-                  <span className="text-[10px] text-gray-400 mt-1 rotate-[-45deg]">
-                    {d.date.slice(5)}
-                  </span>
-                </div>
-              );
-            })}
+                    key={d.date}
+                    className="flex-1 flex flex-col items-center group"
+                    title={`${d.date}: ${d.count} طلب`}
+                  >
+                    <span className="text-[10px] sm:text-xs text-gray-400 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">
+                      {d.count}
+                    </span>
+                    <div
+                      className="w-full bg-primary-400 hover:bg-primary-500 rounded-t transition-colors min-h-[2px]"
+                      style={{ height: `${Math.max(height, 2)}%` }}
+                    />
+                    <span className="text-[8px] sm:text-[10px] text-gray-400 mt-1 -rotate-45 origin-top-right whitespace-nowrap">
+                      {d.date.slice(5)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Regional + Organization stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Regional stats */}
         {regions.length > 0 && (
           <Card>
-            <CardTitle>الطلبات حسب المنطقة</CardTitle>
-            <div className="mt-4 overflow-x-auto">
+            <CardTitle className="mb-4">حسب المنطقة</CardTitle>
+
+            {/* Mobile: card-based */}
+            <div className="sm:hidden space-y-3">
+              {regions.map((r) => (
+                <div key={r.region} className="bg-gray-50 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-900 text-sm">{r.region}</span>
+                    <span className="text-sm font-bold text-gray-700">{r.total}</span>
+                  </div>
+                  <div className="flex gap-3 text-xs">
+                    <span className="text-blue-600">جديد: {r.new}</span>
+                    <span className="text-green-600">مكتمل: {r.completed}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-gray-500 border-b">
@@ -213,10 +285,10 @@ export default function AdminDashboard() {
                 <tbody>
                   {regions.map((r) => (
                     <tr key={r.region} className="border-b border-gray-50">
-                      <td className="py-2">{r.region}</td>
-                      <td className="text-center py-2 font-medium">{r.total}</td>
-                      <td className="text-center py-2 text-blue-600">{r.new}</td>
-                      <td className="text-center py-2 text-green-600">{r.completed}</td>
+                      <td className="py-2.5 font-medium">{r.region}</td>
+                      <td className="text-center py-2.5 font-semibold">{r.total}</td>
+                      <td className="text-center py-2.5 text-blue-600">{r.new}</td>
+                      <td className="text-center py-2.5 text-green-600">{r.completed}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -228,8 +300,36 @@ export default function AdminDashboard() {
         {/* Organization stats */}
         {orgStats.length > 0 && (
           <Card>
-            <CardTitle>أداء المؤسسات</CardTitle>
-            <div className="mt-4 overflow-x-auto">
+            <div className="flex items-center justify-between mb-4">
+              <CardTitle>أداء المؤسسات</CardTitle>
+              <Link href="/admin/organizations" className="text-xs text-primary-600 hover:text-primary-700">
+                عرض الكل
+              </Link>
+            </div>
+
+            {/* Mobile: card-based */}
+            <div className="sm:hidden space-y-3">
+              {orgStats.map((o) => {
+                const rate = o.total_assignments > 0
+                  ? Math.round((o.completed / o.total_assignments) * 100)
+                  : 0;
+                return (
+                  <div key={o.id} className="bg-gray-50 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-900 text-sm truncate flex-1 ml-2">{o.name}</span>
+                      <Badge className="bg-green-100 text-green-800 text-xs">{rate}%</Badge>
+                    </div>
+                    <div className="flex gap-3 text-xs text-gray-500">
+                      <span>التكفلات: {o.total_assignments}</span>
+                      <span className="text-green-600">مكتمل: {o.completed}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-gray-500 border-b">
@@ -242,10 +342,10 @@ export default function AdminDashboard() {
                 <tbody>
                   {orgStats.map((o) => (
                     <tr key={o.id} className="border-b border-gray-50">
-                      <td className="py-2">{o.name}</td>
-                      <td className="text-center py-2">{o.total_assignments}</td>
-                      <td className="text-center py-2 text-green-600">{o.completed}</td>
-                      <td className="text-center py-2">
+                      <td className="py-2.5 font-medium">{o.name}</td>
+                      <td className="text-center py-2.5">{o.total_assignments}</td>
+                      <td className="text-center py-2.5 text-green-600">{o.completed}</td>
+                      <td className="text-center py-2.5">
                         {o.total_assignments > 0
                           ? `${Math.round((o.completed / o.total_assignments) * 100)}%`
                           : '-'}
