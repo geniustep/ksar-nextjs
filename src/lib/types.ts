@@ -169,11 +169,16 @@ export interface RequestResponse {
   status: RequestStatus;
   priority_score: number;
   is_urgent: number;
+  is_flagged?: number;
+  flag_reason?: string | null;
+  flagged_at?: string | null;
+  flagged_by_name?: string | null;
   created_at: string;
   updated_at: string | null;
   completed_at: string | null;
   pledge_count?: number;
   already_pledged?: boolean;
+  inspector_name?: string | null;
 }
 
 export interface CitizenRequestResponse {
@@ -426,6 +431,10 @@ export interface InspectorRequestResponse {
   status: RequestStatus;
   priority_score: number;
   is_urgent: number;
+  is_flagged?: number;
+  flag_reason?: string | null;
+  flagged_at?: string | null;
+  flagged_by_name?: string | null;
   inspector_id: string | null;
   inspector_notes: string | null;
   admin_notes: string | null;
@@ -557,6 +566,33 @@ export interface OrganizationCreatedResponse {
   message: string;
   organization: AdminOrgListItem;
   access_code: string;
+}
+
+export interface OrgProfileResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  address: string | null;
+  service_types: string[];
+  coverage_areas: string[];
+  status: string;
+  total_completed: number;
+  created_at: string | null;
+}
+
+export interface OrgProfileUpdateRequest {
+  name?: string;
+  description?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  address?: string;
+}
+
+export interface OrgProfileUpdateResponse {
+  message: string;
+  organization: OrgProfileResponse;
 }
 
 export interface OrganizationLoginRequest {

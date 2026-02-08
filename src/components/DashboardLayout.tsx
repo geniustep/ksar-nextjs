@@ -31,11 +31,13 @@ const superadminNav: NavItem[] = [
 const orgNav: NavItem[] = [
   { label: 'الطلبات المتاحة', href: '/org/requests', icon: '📋', mobileLabel: 'الطلبات' },
   { label: 'تكفلاتي', href: '/org/assignments', icon: '✅' },
+  { label: 'ملف المؤسسة', href: '/org/profile', icon: '🏢', mobileLabel: 'الملف' },
 ];
 
 const inspectorNav: NavItem[] = [
   { label: 'لوحة التحكم', href: '/inspector', icon: '📊', mobileLabel: 'الرئيسية' },
   { label: 'الطلبات', href: '/inspector/requests', icon: '📋' },
+  { label: 'المشبوهة', href: '/inspector/flagged', icon: '⚠️', mobileLabel: 'تنبيهات' },
   { label: 'الجمعيات', href: '/inspector/organizations', icon: '🏢' },
   { label: 'الملف الشخصي', href: '/inspector/profile', icon: '👤', mobileLabel: 'حسابي' },
 ];

@@ -214,14 +214,23 @@ function InspectorRequestsContent() {
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1 mr-2">
+                      {req.is_flagged === 1 && <Badge className="bg-orange-100 text-orange-800 text-[10px]">⚠️ مشبوه</Badge>}
                       <Badge className={`${REQUEST_STATUS_COLORS[req.status]} text-[10px]`}>{REQUEST_STATUS_LABELS[req.status]}</Badge>
                       {req.is_urgent === 1 && <Badge className="bg-red-100 text-red-800 text-[10px]">مستعجل</Badge>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-2">
+                  {req.is_flagged === 1 && req.flag_reason && (
+                    <div className="mb-1.5 p-1.5 bg-orange-50 border border-orange-100 rounded-lg">
+                      <p className="text-[10px] text-orange-700 leading-relaxed truncate">{req.flag_reason}</p>
+                      {req.flagged_by_name && (
+                        <p className="text-[9px] text-orange-500 mt-0.5">المراقب: {req.flagged_by_name}</p>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-1.5">
                     <span>{CATEGORY_LABELS[req.category as RequestCategory] || req.category}</span>
                     <span className="text-gray-300">|</span>
-                    <span>{req.region || '-'}</span>
+                    <span>{req.city || '-'}{req.region ? ` - ${req.region}` : ''}</span>
                     {req.pledge_count !== undefined && req.pledge_count > 0 && (
                       <>
                         <span className="text-gray-300">|</span>
@@ -229,6 +238,13 @@ function InspectorRequestsContent() {
                       </>
                     )}
                   </div>
+                  {req.inspector_name && (
+                    <div className="flex items-center gap-1 mb-2">
+                      <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+                        👁️ {req.inspector_name}
+                      </span>
+                    </div>
+                  )}
                   {req.status === 'pending' && (
                     <div className="flex gap-2 pt-2 border-t border-gray-50">
                       <button
@@ -262,7 +278,9 @@ function InspectorRequestsContent() {
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">الهاتف</th>
                     <th className="text-center py-3 px-2 text-gray-500 font-medium">طلبات</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">التصنيف</th>
+                    <th className="text-right py-3 px-2 text-gray-500 font-medium">المدينة</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">المنطقة</th>
+                    <th className="text-right py-3 px-2 text-gray-500 font-medium">المراقب</th>
                     <th className="text-center py-3 px-2 text-gray-500 font-medium">تعهدات</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">الحالة</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">التاريخ</th>
@@ -284,13 +302,22 @@ function InspectorRequestsContent() {
                         ) : <span className="text-gray-300">-</span>}
                       </td>
                       <td className="py-3 px-2">{CATEGORY_LABELS[req.category as RequestCategory] || req.category}</td>
+                      <td className="py-3 px-2 text-gray-600">{req.city || '-'}</td>
                       <td className="py-3 px-2 text-gray-600">{req.region || '-'}</td>
+                      <td className="py-3 px-2">
+                        {req.inspector_name ? (
+                          <span className="text-xs text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">{req.inspector_name}</span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
                       <td className="py-3 px-2 text-center">
                         {req.pledge_count !== undefined && req.pledge_count > 0 ? (
                           <Badge className="bg-blue-100 text-blue-800">{req.pledge_count}</Badge>
                         ) : <span className="text-gray-300">-</span>}
                       </td>
                       <td className="py-3 px-2">
+                        {req.is_flagged === 1 && <Badge className="bg-orange-100 text-orange-800 ml-1">⚠️</Badge>}
                         <Badge className={REQUEST_STATUS_COLORS[req.status]}>{REQUEST_STATUS_LABELS[req.status]}</Badge>
                         {req.is_urgent === 1 && <Badge className="bg-red-100 text-red-800 mr-1">مستعجل</Badge>}
                       </td>

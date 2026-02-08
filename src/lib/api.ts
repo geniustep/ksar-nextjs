@@ -58,6 +58,9 @@ import type {
   OrganizationLoginResponse,
   OrgAccessRequest,
   OrgAccessResponse,
+  OrgProfileResponse,
+  OrgProfileUpdateRequest,
+  OrgProfileUpdateResponse,
   CitizenListItem,
   AdminListResponse,
   AdminCreatedResponse,
@@ -319,6 +322,17 @@ export const orgApi = {
 
   getStats(): Promise<OrgStats> {
     return request('/api/v1/org/stats');
+  },
+
+  getProfile(): Promise<OrgProfileResponse> {
+    return request('/api/v1/org/profile');
+  },
+
+  updateProfile(data: OrgProfileUpdateRequest): Promise<OrgProfileUpdateResponse> {
+    return request('/api/v1/org/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   },
 };
 
@@ -623,6 +637,42 @@ export const inspectorApi = {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  },
+
+  claimRequest(requestId: string): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/claim`, {
+      method: 'PATCH',
+    });
+  },
+
+  unclaimRequest(requestId: string): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/unclaim`, {
+      method: 'PATCH',
+    });
+  },
+
+  flagRequest(requestId: string, reason: string): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/flag`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  unflagRequest(requestId: string): Promise<{ message: string; data: RequestResponse }> {
+    return request(`/api/v1/inspector/requests/${requestId}/unflag`, {
+      method: 'PATCH',
+    });
+  },
+
+  getFlaggedRequests(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedRequests> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    return request(`/api/v1/inspector/flagged-requests${qs ? '?' + qs : ''}`);
   },
 
   updateRequestStatus(requestId: string, data: { status?: RequestStatus; is_urgent?: number }): Promise<{ message: string; data: RequestResponse }> {

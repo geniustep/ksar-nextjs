@@ -52,6 +52,9 @@ export default function InspectorRequestDetailPage() {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [newStatus, setNewStatus] = useState('');
 
+  const [showFlagForm, setShowFlagForm] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
+
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     requester_name: '',
@@ -227,6 +230,52 @@ export default function InspectorRequestDetailPage() {
     setIsEditing(false);
   };
 
+  const handleClaim = async () => {
+    setActionLoading(true); setError(''); setSuccess('');
+    try {
+      const res = await inspectorApi.claimRequest(requestId);
+      setSuccess(res.message);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleUnclaim = async () => {
+    setActionLoading(true); setError(''); setSuccess('');
+    try {
+      const res = await inspectorApi.unclaimRequest(requestId);
+      setSuccess(res.message);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleFlag = async () => {
+    if (!flagReason.trim()) { setError('يرجى إدخال سبب التنبيه'); return; }
+    setActionLoading(true); setError(''); setSuccess('');
+    try {
+      const res = await inspectorApi.flagRequest(requestId, flagReason.trim());
+      setSuccess(res.message);
+      setShowFlagForm(false); setFlagReason('');
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleUnflag = async () => {
+    setActionLoading(true); setError(''); setSuccess('');
+    try {
+      const res = await inspectorApi.unflagRequest(requestId);
+      setSuccess(res.message);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
+  };
+
   const handleDelete = async () => {
     if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
     setActionLoading(true); setError('');
@@ -265,6 +314,9 @@ export default function InspectorRequestDetailPage() {
   const canAssign = request.status === 'pending' || request.status === 'new';
   const canDelete = request.status === 'pending' || request.status === 'new' || request.status === 'rejected' || request.status === 'cancelled';
   const isSupervisor = request.inspector_id === user?.id;
+  const canClaim = !request.inspector_id;
+  const canUnclaim = isSupervisor;
+  const isFlagged = request.is_flagged === 1;
 
   return (
     <DashboardLayout>
@@ -279,6 +331,9 @@ export default function InspectorRequestDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h1 className="text-lg sm:text-2xl font-bold text-neutral-dark">تفاصيل الطلب</h1>
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {isFlagged && (
+              <Badge className="bg-orange-100 text-orange-800 text-[10px] sm:text-xs animate-pulse">⚠️ تنبيه</Badge>
+            )}
             {isSupervisor && (
               <Badge className="bg-indigo-100 text-indigo-800 text-[10px] sm:text-xs">المراقب المسؤول</Badge>
             )}
@@ -545,6 +600,109 @@ export default function InspectorRequestDetailPage() {
 
         {/* Sidebar - Actions */}
         <div className="space-y-4 sm:space-y-6">
+          {/* Claim / Inspector Assignment */}
+          <Card>
+            <CardTitle>التكلف بالحالة</CardTitle>
+            <div className="mt-3 sm:mt-4">
+              {canClaim ? (
+                <Button className="w-full text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700" onClick={handleClaim} loading={actionLoading}>
+                  🔒 تكلف بهذا الطلب
+                </Button>
+              ) : isSupervisor ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+                    <span className="text-indigo-600 font-bold text-sm">✓</span>
+                    <span className="text-sm text-indigo-800 font-medium">أنت مكلف بهذا الطلب</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-full text-xs text-gray-500 hover:text-red-600 hover:bg-red-50" onClick={handleUnclaim} loading={actionLoading}>
+                    إلغاء التكلف
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-xs text-amber-800">
+                    <span className="font-medium">مكلف به:</span>{' '}
+                    {`#${request.inspector_id?.slice(0, 8)}`}
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Flag / Alert */}
+          <Card>
+            <CardTitle>التنبيه والشك</CardTitle>
+            <div className="mt-3 sm:mt-4">
+              {isFlagged ? (
+                <div className="space-y-2.5">
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-orange-600 text-lg">⚠️</span>
+                      <span className="text-sm font-medium text-orange-800">طلب مشبوه</span>
+                    </div>
+                    <p className="text-xs text-orange-700 leading-relaxed">{request.flag_reason}</p>
+                    {request.flagged_by_name && (
+                      <p className="text-[10px] text-orange-500 mt-2">
+                        أبلغ عنه: <span className="font-medium">{request.flagged_by_name}</span>
+                        {request.flagged_at && (
+                          <span className="mr-1">- {new Date(request.flagged_at).toLocaleDateString('ar-MA')}</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-green-600 hover:bg-green-50"
+                    onClick={handleUnflag}
+                    loading={actionLoading}
+                  >
+                    ✓ إزالة التنبيه (الحالة سليمة)
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {!showFlagForm ? (
+                    <Button
+                      variant="ghost"
+                      className="w-full text-xs sm:text-sm text-orange-600 hover:bg-orange-50 border border-orange-200"
+                      onClick={() => setShowFlagForm(true)}
+                    >
+                      ⚠️ تنبيه - شك في الحالة
+                    </Button>
+                  ) : (
+                    <div className="space-y-2.5 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                      <p className="text-xs font-medium text-orange-800">ما سبب الشك في هذه الحالة؟</p>
+                      <textarea
+                        value={flagReason}
+                        onChange={(e) => setFlagReason(e.target.value)}
+                        placeholder="مثال: الرقم مكرر، البيانات غير متناسقة، اشتباه في استغلال..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-orange-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none bg-white"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          className="flex-1 text-xs bg-orange-600 hover:bg-orange-700"
+                          onClick={handleFlag}
+                          loading={actionLoading}
+                        >
+                          تأكيد التنبيه
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setShowFlagForm(false); setFlagReason(''); }}
+                        >
+                          إلغاء
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </Card>
+
           {/* Quick Actions */}
           <Card>
             <CardTitle>الإجراءات</CardTitle>

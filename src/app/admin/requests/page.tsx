@@ -163,10 +163,17 @@ export default function AdminRequestsPage() {
                   <div className="flex items-center gap-3 text-xs text-gray-500">
                     <span>{CATEGORY_ICONS[req.category]} {CATEGORY_LABELS[req.category]}</span>
                     <span className="text-gray-300">|</span>
-                    <span>{req.region || req.city || '-'}</span>
+                    <span>{req.city || '-'}{req.region ? ` - ${req.region}` : ''}</span>
                     <span className="text-gray-300">|</span>
                     <span>{formatRelativeTime(req.created_at)}</span>
                   </div>
+                  {req.inspector_name && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+                        👁️ {req.inspector_name}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
                     <span className="text-xs text-gray-400">الأولوية: <span className={`font-bold ${req.is_urgent ? 'text-red-600' : 'text-gray-700'}`}>{req.priority_score}</span></span>
                     <button
@@ -191,7 +198,9 @@ export default function AdminRequestsPage() {
                     <th className="text-right px-4 py-3">التصنيف</th>
                     <th className="text-center px-4 py-3">الحالة</th>
                     <th className="text-center px-4 py-3">الأولوية</th>
+                    <th className="text-right px-4 py-3">المدينة</th>
                     <th className="text-right px-4 py-3">المنطقة</th>
+                    <th className="text-right px-4 py-3">المراقب</th>
                     <th className="text-right px-4 py-3">التاريخ</th>
                     <th className="text-center px-4 py-3">إجراءات</th>
                   </tr>
@@ -218,7 +227,15 @@ export default function AdminRequestsPage() {
                           {req.priority_score}{req.is_urgent === 1 && ' !'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{req.region || req.city || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{req.city || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{req.region || '-'}</td>
+                      <td className="px-4 py-3">
+                        {req.inspector_name ? (
+                          <span className="text-xs text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">{req.inspector_name}</span>
+                        ) : (
+                          <span className="text-sm text-gray-300">-</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-400">{formatRelativeTime(req.created_at)}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
