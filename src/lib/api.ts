@@ -54,6 +54,8 @@ import type {
   RequestPledgesResponse,
   OrganizationCreateRequest,
   OrganizationCreatedResponse,
+  OrganizationUpdateRequest,
+  OrganizationUpdateResponse,
   OrganizationLoginRequest,
   OrganizationLoginResponse,
   OrgAccessRequest,
@@ -413,6 +415,13 @@ export const adminApi = {
   updateOrgStatus(orgId: string, status: string): Promise<{ message: string }> {
     return request(`/api/v1/admin/organizations/${orgId}/status?status=${status}`, {
       method: 'PATCH',
+    });
+  },
+
+  updateOrganization(orgId: string, data: OrganizationUpdateRequest): Promise<OrganizationUpdateResponse> {
+    return request(`/api/v1/admin/organizations/${orgId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   },
 

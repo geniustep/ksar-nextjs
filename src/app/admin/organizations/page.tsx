@@ -42,6 +42,21 @@ export default function AdminOrganizationsPage() {
   const [copiedOrgId, setCopiedOrgId] = useState<string | null>(null);
   const [visibleCodeIds, setVisibleCodeIds] = useState<Set<string>>(new Set());
 
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editOrg, setEditOrg] = useState<AdminOrgListItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editRegion, setEditRegion] = useState('');
+  const [editServiceTypes, setEditServiceTypes] = useState('');
+  const [editCoverageAreas, setEditCoverageAreas] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+
   // Set code modal
   const [showSetCodeModal, setShowSetCodeModal] = useState(false);
   const [setCodeOrg, setSetCodeOrg] = useState<AdminOrgListItem | null>(null);
@@ -163,6 +178,65 @@ export default function AdminOrganizationsPage() {
     }
   };
 
+  const openEditModal = (org: AdminOrgListItem) => {
+    setEditOrg(org);
+    setEditName(org.name || '');
+    setEditPhone(org.contact_phone || '');
+    setEditEmail(org.contact_email || '');
+    setEditDescription(org.description || '');
+    setEditAddress(org.address || '');
+    setEditCity(org.city || '');
+    setEditRegion(org.region || '');
+    setEditServiceTypes((org.service_types || []).join(', '));
+    setEditCoverageAreas((org.coverage_areas || []).join(', '));
+    setEditError('');
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editOrg) return;
+    setEditLoading(true);
+    setEditError('');
+
+    try {
+      const data: Record<string, unknown> = {};
+
+      if (editName !== (editOrg.name || '')) data.name = editName;
+      if (editPhone !== (editOrg.contact_phone || '')) data.phone = editPhone;
+      if (editEmail !== (editOrg.contact_email || '')) data.email = editEmail || null;
+      if (editDescription !== (editOrg.description || '')) data.description = editDescription || null;
+      if (editAddress !== (editOrg.address || '')) data.address = editAddress || null;
+      if (editCity !== (editOrg.city || '')) data.city = editCity || null;
+      if (editRegion !== (editOrg.region || '')) data.region = editRegion || null;
+
+      const newServiceTypes = editServiceTypes.split(',').map(s => s.trim()).filter(Boolean);
+      const oldServiceTypes = (editOrg.service_types || []).join(', ');
+      if (editServiceTypes !== oldServiceTypes) data.service_types = newServiceTypes;
+
+      const newCoverageAreas = editCoverageAreas.split(',').map(s => s.trim()).filter(Boolean);
+      const oldCoverageAreas = (editOrg.coverage_areas || []).join(', ');
+      if (editCoverageAreas !== oldCoverageAreas) data.coverage_areas = newCoverageAreas;
+
+      if (Object.keys(data).length === 0) {
+        setEditError('لم يتم تغيير أي بيانات');
+        setEditLoading(false);
+        return;
+      }
+
+      await adminApi.updateOrganization(editOrg.id, data);
+      setShowEditModal(false);
+      await loadData();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setEditError(err.detail);
+      } else {
+        setEditError('خطأ في الاتصال بالخادم');
+      }
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const copyCode = async () => {
     await navigator.clipboard.writeText(displayCode);
     setCodeCopied(true);
@@ -277,6 +351,9 @@ export default function AdminOrganizationsPage() {
                   >
                     {org.status === 'active' ? 'تعليق' : 'تفعيل'}
                   </button>
+                  <button onClick={() => openEditModal(org)} className="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg flex-1">
+                    تعديل
+                  </button>
                   <button onClick={() => openSetCodeModal(org)} className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg flex-1">
                     تعيين كود
                   </button>
@@ -342,6 +419,9 @@ export default function AdminOrganizationsPage() {
                             className={`text-xs px-2 py-1 rounded-lg transition-colors ${org.status === 'active' ? 'bg-orange-50 text-orange-700 hover:bg-orange-100' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
                           >
                             {org.status === 'active' ? 'تعليق' : 'تفعيل'}
+                          </button>
+                          <button onClick={() => openEditModal(org)} className="text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded-lg transition-colors">
+                            تعديل
                           </button>
                           <button onClick={() => openSetCodeModal(org)} className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded-lg transition-colors">
                             تعيين كود
@@ -497,6 +577,95 @@ export default function AdminOrganizationsPage() {
           <Button variant="ghost" className="w-full mt-3" onClick={() => setShowSetCodeModal(false)}>
             إلغاء
           </Button>
+        </div>
+      </Modal>
+
+      {/* Edit Organization Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`تعديل المؤسسة - ${editOrg?.name || ''}`}>
+        <div className="space-y-4">
+          {editError && (
+            <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl">
+              {editError}
+            </div>
+          )}
+
+          <Input
+            label="اسم المؤسسة"
+            placeholder="اسم الجمعية أو المؤسسة"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+          />
+
+          <Input
+            label="رقم الهاتف"
+            type="tel"
+            placeholder="06XXXXXXXX"
+            value={editPhone}
+            onChange={(e) => setEditPhone(e.target.value)}
+            dir="ltr"
+          />
+
+          <Input
+            label="البريد الإلكتروني"
+            type="email"
+            placeholder="org@example.com"
+            value={editEmail}
+            onChange={(e) => setEditEmail(e.target.value)}
+            dir="ltr"
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="المدينة"
+              placeholder="المدينة"
+              value={editCity}
+              onChange={(e) => setEditCity(e.target.value)}
+            />
+            <Input
+              label="المنطقة"
+              placeholder="المنطقة"
+              value={editRegion}
+              onChange={(e) => setEditRegion(e.target.value)}
+            />
+          </div>
+
+          <Input
+            label="العنوان"
+            placeholder="عنوان المؤسسة"
+            value={editAddress}
+            onChange={(e) => setEditAddress(e.target.value)}
+          />
+
+          <Textarea
+            label="وصف المؤسسة"
+            placeholder="نبذة مختصرة عن المؤسسة ونشاطها..."
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            rows={3}
+          />
+
+          <Input
+            label="أنواع الخدمات (مفصولة بفاصلة)"
+            placeholder="مساعدة اجتماعية, توزيع غذائي, ..."
+            value={editServiceTypes}
+            onChange={(e) => setEditServiceTypes(e.target.value)}
+          />
+
+          <Input
+            label="مناطق التغطية (مفصولة بفاصلة)"
+            placeholder="المدينة القديمة, الحي الجديد, ..."
+            value={editCoverageAreas}
+            onChange={(e) => setEditCoverageAreas(e.target.value)}
+          />
+
+          <div className="flex gap-3 pt-2">
+            <Button className="flex-1" onClick={handleEditSave} loading={editLoading}>
+              حفظ التعديلات
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setShowEditModal(false)}>
+              إلغاء
+            </Button>
+          </div>
         </div>
       </Modal>
 

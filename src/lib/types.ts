@@ -387,6 +387,12 @@ export interface AdminOrgListItem {
   name: string;
   contact_phone: string;
   contact_email: string;
+  description?: string | null;
+  address?: string | null;
+  city?: string | null;
+  region?: string | null;
+  service_types?: string[];
+  coverage_areas?: string[];
   status: string;
   total_completed: number;
   created_at: string;
@@ -566,6 +572,23 @@ export interface OrganizationCreatedResponse {
   message: string;
   organization: AdminOrgListItem;
   access_code: string;
+}
+
+export interface OrganizationUpdateRequest {
+  name?: string;
+  phone?: string;
+  email?: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  region?: string;
+  service_types?: string[];
+  coverage_areas?: string[];
+}
+
+export interface OrganizationUpdateResponse {
+  message: string;
+  organization: AdminOrgListItem;
 }
 
 export interface OrgProfileResponse {
