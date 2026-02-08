@@ -155,7 +155,7 @@ export default function OrgRegisterPage() {
                 <Input
                   label="اسم الجمعية / المبادرة"
                   name="name"
-                  placeholder="مثال: جمعية الخير للتنمية"
+                  placeholder="مثال: اسم الجمعية أو الشخص القائم بالمبادرة"
                   value={form.name}
                   onChange={handleChange}
                   required

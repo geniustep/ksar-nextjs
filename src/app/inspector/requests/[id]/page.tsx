@@ -35,17 +35,14 @@ export default function InspectorRequestDetailPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Phone request count
   const [phoneRequestCount, setPhoneRequestCount] = useState<number | null>(null);
 
-  // Pledges
   const [pledgesData, setPledgesData] = useState<RequestPledgesResponse | null>(null);
-  const [showApproveForm, setShowApproveForm] = useState<string | null>(null); // assignment_id
+  const [showApproveForm, setShowApproveForm] = useState<string | null>(null);
   const [approveShowPhone, setApproveShowPhone] = useState(false);
   const [approveContactName, setApproveContactName] = useState('');
   const [approveContactPhone, setApproveContactPhone] = useState('');
 
-  // Form state
   const [inspectorNotes, setInspectorNotes] = useState('');
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
@@ -53,10 +50,8 @@ export default function InspectorRequestDetailPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
-  // Status change
   const [newStatus, setNewStatus] = useState('');
 
-  // Edit request data
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     requester_name: '',
@@ -86,7 +81,6 @@ export default function InspectorRequestDetailPage() {
       setInspectorNotes(reqRes.inspector_notes || '');
       setNewStatus(reqRes.status);
 
-      // Initialize edit form
       setEditForm({
         requester_name: reqRes.requester_name || '',
         requester_phone: reqRes.requester_phone || '',
@@ -99,22 +93,16 @@ export default function InspectorRequestDetailPage() {
         region: reqRes.region || '',
       });
 
-      // Load pledges
       try {
         const pledges = await inspectorApi.getRequestPledges(requestId);
         setPledgesData(pledges);
-      } catch {
-        // Silently handle
-      }
+      } catch { /* Silently handle */ }
 
-      // Load phone request count
       if (reqRes.requester_phone) {
         try {
           const countRes = await inspectorApi.getPhoneRequestCount(reqRes.requester_phone);
           setPhoneRequestCount(countRes.count);
-        } catch {
-          // Silently handle
-        }
+        } catch { /* Silently handle */ }
       }
     } catch (err) {
       console.error('Failed to load request:', err);
@@ -125,142 +113,87 @@ export default function InspectorRequestDetailPage() {
   };
 
   const handleActivate = async () => {
-    setActionLoading(true);
-    setError('');
-    setSuccess('');
+    setActionLoading(true); setError(''); setSuccess('');
     try {
       await inspectorApi.activateRequest(requestId, inspectorNotes || undefined);
-      setSuccess('تم تفعيل الطلب بنجاح - أصبحت المراقب المسؤول عن هذا الطلب');
+      setSuccess('تم تفعيل الطلب بنجاح');
       await loadData();
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
-    } finally {
-      setActionLoading(false);
-    }
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
   };
 
   const handleReject = async () => {
-    setActionLoading(true);
-    setError('');
-    setSuccess('');
+    setActionLoading(true); setError(''); setSuccess('');
     try {
       await inspectorApi.rejectRequest(requestId, rejectReason || undefined);
-      setSuccess('تم رفض الطلب');
-      setShowRejectForm(false);
-      await loadData();
+      setSuccess('تم رفض الطلب'); setShowRejectForm(false); await loadData();
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
-    } finally {
-      setActionLoading(false);
-    }
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
   };
 
   const handleAssign = async () => {
-    if (!selectedOrgId) {
-      setError('يرجى اختيار جمعية');
-      return;
-    }
-    setActionLoading(true);
-    setError('');
-    setSuccess('');
+    if (!selectedOrgId) { setError('يرجى اختيار جمعية'); return; }
+    setActionLoading(true); setError(''); setSuccess('');
     try {
-      await inspectorApi.assignRequest(requestId, {
-        organization_id: selectedOrgId,
-        notes: assignNotes || undefined,
-      });
-      setSuccess('تم ربط الطلب بالجمعية بنجاح');
-      setShowAssignForm(false);
-      await loadData();
+      await inspectorApi.assignRequest(requestId, { organization_id: selectedOrgId, notes: assignNotes || undefined });
+      setSuccess('تم ربط الطلب بالجمعية'); setShowAssignForm(false); await loadData();
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
-    } finally {
-      setActionLoading(false);
-    }
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
   };
 
   const handleApproveOrg = async (assignmentId: string) => {
-    setActionLoading(true);
-    setError('');
-    setSuccess('');
+    setActionLoading(true); setError(''); setSuccess('');
     try {
       const result = await inspectorApi.approveOrgForRequest(requestId, {
-        assignment_id: assignmentId,
-        show_citizen_phone: approveShowPhone,
-        contact_name: approveContactName.trim() || undefined,
-        contact_phone: approveContactPhone.trim() || undefined,
+        assignment_id: assignmentId, show_citizen_phone: approveShowPhone,
+        contact_name: approveContactName.trim() || undefined, contact_phone: approveContactPhone.trim() || undefined,
       });
       setSuccess(result.message);
-      setShowApproveForm(null);
-      setApproveShowPhone(false);
-      setApproveContactName('');
-      setApproveContactPhone('');
+      setShowApproveForm(null); setApproveShowPhone(false); setApproveContactName(''); setApproveContactPhone('');
       await loadData();
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
-    } finally {
-      setActionLoading(false);
-    }
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
   };
 
   const handleStatusChange = async () => {
     if (!newStatus || newStatus === request?.status) return;
-    setActionLoading(true);
-    setError('');
-    setSuccess('');
+    setActionLoading(true); setError(''); setSuccess('');
     try {
-      await inspectorApi.updateRequestStatus(requestId, {
-        status: newStatus as RequestStatus,
-      });
-      setSuccess('تم تغيير حالة الطلب بنجاح');
-      await loadData();
+      await inspectorApi.updateRequestStatus(requestId, { status: newStatus as RequestStatus });
+      setSuccess('تم تغيير حالة الطلب'); await loadData();
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
-    } finally {
-      setActionLoading(false);
-    }
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
   };
 
   const handleUrgencyToggle = async () => {
-    setActionLoading(true);
-    setError('');
-    setSuccess('');
+    setActionLoading(true); setError(''); setSuccess('');
     try {
       const toggledUrgency = request?.is_urgent === 1 ? 0 : 1;
-      await inspectorApi.updateRequestStatus(requestId, {
-        is_urgent: toggledUrgency,
-      });
+      await inspectorApi.updateRequestStatus(requestId, { is_urgent: toggledUrgency });
       setSuccess(toggledUrgency === 1 ? 'تم تعيين الطلب كمستعجل' : 'تم إزالة الاستعجال');
       await loadData();
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
-    } finally {
-      setActionLoading(false);
-    }
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setActionLoading(false); }
   };
 
   const handleSaveNotes = async () => {
-    setActionLoading(true);
-    setError('');
+    setActionLoading(true); setError('');
     try {
       await inspectorApi.updateRequestNotes(requestId, { inspector_notes: inspectorNotes });
       setSuccess('تم حفظ الملاحظات');
     } catch (err) {
       if (err instanceof ApiError) setError(err.detail);
-    } finally {
-      setActionLoading(false);
-    }
+    } finally { setActionLoading(false); }
   };
 
   const handleSaveEdit = async () => {
-    setEditLoading(true);
-    setError('');
-    setSuccess('');
+    setEditLoading(true); setError(''); setSuccess('');
     try {
       const updateData: Record<string, unknown> = {};
       if (editForm.requester_name !== request?.requester_name) updateData.requester_name = editForm.requester_name;
@@ -273,70 +206,46 @@ export default function InspectorRequestDetailPage() {
       if (editForm.city !== (request?.city || '')) updateData.city = editForm.city;
       if (editForm.region !== (request?.region || '')) updateData.region = editForm.region;
 
-      if (Object.keys(updateData).length === 0) {
-        setError('لم يتم إجراء أي تغيير');
-        setEditLoading(false);
-        return;
-      }
+      if (Object.keys(updateData).length === 0) { setError('لم يتم إجراء أي تغيير'); setEditLoading(false); return; }
 
       await inspectorApi.editRequestData(requestId, updateData);
-      setSuccess('تم تحديث بيانات الطلب بنجاح');
-      setIsEditing(false);
-      await loadData();
+      setSuccess('تم تحديث بيانات الطلب'); setIsEditing(false); await loadData();
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
-    } finally {
-      setEditLoading(false);
-    }
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
+    } finally { setEditLoading(false); }
   };
 
   const handleCancelEdit = () => {
     if (request) {
       setEditForm({
-        requester_name: request.requester_name || '',
-        requester_phone: request.requester_phone || '',
-        category: request.category as RequestCategory || '',
-        description: request.description || '',
-        quantity: request.quantity || 1,
-        family_members: request.family_members || 1,
-        address: request.address || '',
-        city: request.city || '',
-        region: request.region || '',
+        requester_name: request.requester_name || '', requester_phone: request.requester_phone || '',
+        category: request.category as RequestCategory || '', description: request.description || '',
+        quantity: request.quantity || 1, family_members: request.family_members || 1,
+        address: request.address || '', city: request.city || '', region: request.region || '',
       });
     }
     setIsEditing(false);
   };
 
   const handleDelete = async () => {
-    if (!confirm('هل أنت متأكد من حذف هذا الطلب؟ هذا الإجراء لا يمكن التراجع عنه.')) return;
-    setActionLoading(true);
-    setError('');
+    if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
+    setActionLoading(true); setError('');
     try {
       await inspectorApi.deleteRequest(requestId);
       router.push('/inspector/requests');
     } catch (err) {
-      if (err instanceof ApiError) setError(err.detail);
-      else setError('خطأ غير متوقع');
+      if (err instanceof ApiError) setError(err.detail); else setError('خطأ غير متوقع');
       setActionLoading(false);
     }
   };
 
   const parseImages = (imagesStr: string | null): string[] => {
     if (!imagesStr) return [];
-    try {
-      return JSON.parse(imagesStr);
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(imagesStr); } catch { return []; }
   };
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center py-12"><Spinner /></div>
-      </DashboardLayout>
-    );
+    return (<DashboardLayout><div className="flex justify-center py-12"><Spinner /></div></DashboardLayout>);
   }
 
   if (!request) {
@@ -344,9 +253,7 @@ export default function InspectorRequestDetailPage() {
       <DashboardLayout>
         <div className="text-center py-12">
           <p className="text-gray-500">الطلب غير موجود</p>
-          <Button variant="ghost" onClick={() => router.push('/inspector/requests')} className="mt-4">
-            العودة للقائمة
-          </Button>
+          <Button variant="ghost" onClick={() => router.push('/inspector/requests')} className="mt-4">العودة للقائمة</Button>
         </div>
       </DashboardLayout>
     );
@@ -361,206 +268,120 @@ export default function InspectorRequestDetailPage() {
 
   return (
     <DashboardLayout>
-      {/* Header */}
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-gray-500 hover:text-gray-700 mb-2 flex items-center gap-1"
-          >
-            <span>&larr;</span> العودة
-          </button>
-          <h1 className="text-2xl font-bold text-neutral-dark">تفاصيل الطلب</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {isSupervisor && (
-            <Badge className="bg-indigo-100 text-indigo-800">أنت المراقب المسؤول</Badge>
-          )}
-          <Badge className={`${REQUEST_STATUS_COLORS[request.status]} text-base px-4 py-1`}>
-            {REQUEST_STATUS_LABELS[request.status]}
-          </Badge>
+      {/* Header - responsive */}
+      <div className="mb-4 sm:mb-6">
+        <button
+          onClick={() => router.back()}
+          className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 mb-2 flex items-center gap-1"
+        >
+          <span>&larr;</span> العودة
+        </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h1 className="text-lg sm:text-2xl font-bold text-neutral-dark">تفاصيل الطلب</h1>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {isSupervisor && (
+              <Badge className="bg-indigo-100 text-indigo-800 text-[10px] sm:text-xs">المراقب المسؤول</Badge>
+            )}
+            <Badge className={`${REQUEST_STATUS_COLORS[request.status]} text-xs sm:text-base px-2.5 sm:px-4 py-0.5 sm:py-1`}>
+              {REQUEST_STATUS_LABELS[request.status]}
+            </Badge>
+          </div>
         </div>
       </div>
 
       {/* Messages */}
       {error && (
-        <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-sm p-3 rounded-xl mb-4">
-          {error}
-        </div>
+        <div className="bg-danger-500/5 border border-danger-500/20 text-danger-500 text-xs sm:text-sm p-3 rounded-xl mb-4">{error}</div>
       )}
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-xl mb-4">
-          {success}
-        </div>
+        <div className="bg-green-50 border border-green-200 text-green-700 text-xs sm:text-sm p-3 rounded-xl mb-4">{success}</div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Request Info */}
           <Card>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <CardTitle>معلومات الطلب</CardTitle>
               {!isEditing ? (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
-                >
+                <button onClick={() => setIsEditing(true)} className="text-xs sm:text-sm text-primary-600 font-medium flex items-center gap-1">
                   <span>✏️</span> تحرير
                 </button>
               ) : (
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleSaveEdit}
-                    loading={editLoading}
-                  >
-                    حفظ التغييرات
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleCancelEdit}
-                    disabled={editLoading}
-                  >
-                    إلغاء
-                  </Button>
+                <div className="flex gap-1.5 sm:gap-2">
+                  <Button size="sm" onClick={handleSaveEdit} loading={editLoading}>حفظ</Button>
+                  <Button size="sm" variant="ghost" onClick={handleCancelEdit} disabled={editLoading}>إلغاء</Button>
                 </div>
               )}
             </div>
 
             {isEditing ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="صاحب الطلب"
-                    value={editForm.requester_name}
-                    onChange={(e) => setEditForm({ ...editForm, requester_name: e.target.value })}
-                    required
-                  />
-                  <Input
-                    label="رقم الهاتف"
-                    value={editForm.requester_phone}
-                    onChange={(e) => setEditForm({ ...editForm, requester_phone: e.target.value })}
-                    dir="ltr"
-                    required
-                  />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <Input label="صاحب الطلب" value={editForm.requester_name} onChange={(e) => setEditForm({ ...editForm, requester_name: e.target.value })} required />
+                  <Input label="رقم الهاتف" value={editForm.requester_phone} onChange={(e) => setEditForm({ ...editForm, requester_phone: e.target.value })} dir="ltr" required />
                 </div>
-
-                <Select
-                  label="التصنيف"
-                  value={editForm.category}
-                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value as RequestCategory })}
-                  options={ALL_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
-                />
-
-                <Textarea
-                  label="الوصف"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  rows={3}
-                  placeholder="وصف الطلب..."
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="الكمية"
-                    type="number"
-                    value={String(editForm.quantity)}
-                    onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
-                    min={1}
-                  />
-                  <Input
-                    label="أفراد الأسرة"
-                    type="number"
-                    value={String(editForm.family_members)}
-                    onChange={(e) => setEditForm({ ...editForm, family_members: parseInt(e.target.value) || 1 })}
-                    min={1}
-                  />
+                <Select label="التصنيف" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value as RequestCategory })} options={ALL_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))} />
+                <Textarea label="الوصف" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={3} />
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <Input label="الكمية" type="number" value={String(editForm.quantity)} onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })} min={1} />
+                  <Input label="أفراد الأسرة" type="number" value={String(editForm.family_members)} onChange={(e) => setEditForm({ ...editForm, family_members: parseInt(e.target.value) || 1 })} min={1} />
                 </div>
-
-                <Input
-                  label="العنوان"
-                  value={editForm.address}
-                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="المدينة"
-                    value={editForm.city}
-                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                  />
-                  <Input
-                    label="المنطقة"
-                    value={editForm.region}
-                    onChange={(e) => setEditForm({ ...editForm, region: e.target.value })}
-                  />
-                </div>
-
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
-                  <span className="font-medium">ملاحظة:</span> سيتم حفظ التغييرات مباشرة على الطلب الأصلي
+                <Input label="العنوان" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <Input label="المدينة" value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} />
+                  <Input label="المنطقة" value={editForm.region} onChange={(e) => setEditForm({ ...editForm, region: e.target.value })} />
                 </div>
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">صاحب الطلب</p>
-                    <p className="font-medium">{request.requester_name}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">صاحب الطلب</p>
+                    <p className="font-medium text-sm sm:text-base">{request.requester_name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">رقم الهاتف</p>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium" dir="ltr">{request.requester_phone}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">رقم الهاتف</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-sm sm:text-base" dir="ltr">{request.requester_phone}</p>
                       {phoneRequestCount !== null && (
-                        <Badge className={
-                          phoneRequestCount > 3
-                            ? 'bg-orange-100 text-orange-800'
-                            : phoneRequestCount > 1
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-gray-100 text-gray-600'
-                        }>
-                          {phoneRequestCount} طلب
+                        <Badge className={`${phoneRequestCount > 3 ? 'bg-orange-100 text-orange-800' : phoneRequestCount > 1 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'} text-[10px] sm:text-xs`}>
+                          {phoneRequestCount}
                         </Badge>
                       )}
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">التصنيف</p>
-                    <p className="font-medium">
-                      {CATEGORY_ICONS[request.category as RequestCategory]}{' '}
-                      {CATEGORY_LABELS[request.category as RequestCategory] || request.category}
+                    <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">التصنيف</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      {CATEGORY_ICONS[request.category as RequestCategory]} {CATEGORY_LABELS[request.category as RequestCategory] || request.category}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">أفراد الأسرة</p>
-                    <p className="font-medium">{request.family_members}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">أفراد الأسرة</p>
+                    <p className="font-medium text-sm sm:text-base">{request.family_members}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">الكمية</p>
-                    <p className="font-medium">{request.quantity}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">الكمية</p>
+                    <p className="font-medium text-sm sm:text-base">{request.quantity}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">الأولوية</p>
-                    <p className="font-medium">{request.priority_score}/100</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">الأولوية</p>
+                    <p className="font-medium text-sm sm:text-base">{request.priority_score}/100</p>
                   </div>
                   {request.is_urgent === 1 && (
                     <div className="col-span-2">
-                      <Badge className="bg-red-100 text-red-800">مستعجل</Badge>
+                      <Badge className="bg-red-100 text-red-800 text-xs">مستعجل</Badge>
                     </div>
                   )}
                 </div>
-
-                {/* Supervisor Info */}
                 {request.inspector_id && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">المراقب المسؤول:</span>
-                      <Badge className="bg-indigo-50 text-indigo-700">
-                        {isSupervisor ? 'أنت' : `مراقب #${request.inspector_id.slice(0, 8)}`}
-                      </Badge>
-                    </div>
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
+                    <span className="text-[10px] sm:text-xs text-gray-400">المراقب:</span>
+                    <Badge className="bg-indigo-50 text-indigo-700 text-[10px] sm:text-xs">
+                      {isSupervisor ? 'أنت' : `#${request.inspector_id.slice(0, 8)}`}
+                    </Badge>
                   </div>
                 )}
               </>
@@ -571,7 +392,7 @@ export default function InspectorRequestDetailPage() {
           {!isEditing && request.description && (
             <Card>
               <CardTitle>الوصف</CardTitle>
-              <p className="text-gray-700 mt-2 whitespace-pre-wrap">{request.description}</p>
+              <p className="text-gray-700 text-sm mt-2 whitespace-pre-wrap">{request.description}</p>
             </Card>
           )}
 
@@ -579,25 +400,23 @@ export default function InspectorRequestDetailPage() {
           {!isEditing && (
             <Card>
               <CardTitle>الموقع</CardTitle>
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">العنوان</p>
-                  <p className="text-gray-700">{request.address || '-'}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">العنوان</p>
+                  <p className="text-gray-700 text-sm">{request.address || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">المدينة</p>
-                  <p className="text-gray-700">{request.city || '-'}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">المدينة</p>
+                  <p className="text-gray-700 text-sm">{request.city || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">المنطقة</p>
-                  <p className="text-gray-700">{request.region || '-'}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">المنطقة</p>
+                  <p className="text-gray-700 text-sm">{request.region || '-'}</p>
                 </div>
                 {request.latitude && request.longitude && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-1">الإحداثيات</p>
-                    <p className="text-gray-700 text-xs" dir="ltr">
-                      {request.latitude.toFixed(5)}, {request.longitude.toFixed(5)}
-                    </p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">الإحداثيات</p>
+                    <p className="text-gray-700 text-[10px] sm:text-xs" dir="ltr">{request.latitude.toFixed(5)}, {request.longitude.toFixed(5)}</p>
                   </div>
                 )}
               </div>
@@ -608,9 +427,7 @@ export default function InspectorRequestDetailPage() {
           {request.audio_url && (
             <Card>
               <CardTitle>تسجيل صوتي</CardTitle>
-              <audio controls className="w-full mt-2" src={request.audio_url}>
-                <track kind="captions" />
-              </audio>
+              <audio controls className="w-full mt-2" src={request.audio_url}><track kind="captions" /></audio>
             </Card>
           )}
 
@@ -618,14 +435,10 @@ export default function InspectorRequestDetailPage() {
           {images.length > 0 && (
             <Card>
               <CardTitle>الصور</CardTitle>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-2">
                 {images.map((img, i) => (
                   <a key={i} href={img} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={img}
-                      alt={`صورة ${i + 1}`}
-                      className="w-full h-32 object-cover rounded-xl border border-gray-100"
-                    />
+                    <img src={img} alt={`صورة ${i + 1}`} className="w-full h-24 sm:h-32 object-cover rounded-lg sm:rounded-xl border border-gray-100" />
                   </a>
                 ))}
               </div>
@@ -635,145 +448,90 @@ export default function InspectorRequestDetailPage() {
           {/* Dates */}
           <Card>
             <CardTitle>التواريخ</CardTitle>
-            <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+            <div className="grid grid-cols-2 gap-3 mt-3 text-xs sm:text-sm">
               <div>
-                <p className="text-xs text-gray-400 mb-1">تاريخ الإنشاء</p>
+                <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">الإنشاء</p>
                 <p>{new Date(request.created_at).toLocaleString('ar-MA')}</p>
               </div>
               {request.updated_at && (
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">آخر تحديث</p>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">آخر تحديث</p>
                   <p>{new Date(request.updated_at).toLocaleString('ar-MA')}</p>
                 </div>
               )}
               {request.completed_at && (
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">تاريخ الإتمام</p>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">الإتمام</p>
                   <p>{new Date(request.completed_at).toLocaleString('ar-MA')}</p>
                 </div>
               )}
             </div>
           </Card>
-          {/* Pledged Organizations */}
+
+          {/* Pledges */}
           {pledgesData && (pledgesData.pledge_count > 0 || pledgesData.approved) && (
             <Card>
               <CardTitle>
                 المؤسسات المتعهدة
                 {pledgesData.pledge_count > 0 && (
-                  <Badge className="bg-blue-100 text-blue-800 mr-2">
-                    {pledgesData.pledge_count} تعهد
-                  </Badge>
+                  <Badge className="bg-blue-100 text-blue-800 mr-2 text-[10px] sm:text-xs">{pledgesData.pledge_count} تعهد</Badge>
                 )}
               </CardTitle>
 
-              {/* Approved org */}
               {pledgesData.approved && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <div className="mt-3 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-xl">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-green-600 font-bold">✓</span>
-                    <span className="font-medium text-green-800">{pledgesData.approved.org_name}</span>
-                    <Badge className="bg-green-100 text-green-700">{pledgesData.approved.status}</Badge>
+                    <span className="font-medium text-green-800 text-sm">{pledgesData.approved.org_name}</span>
+                    <Badge className="bg-green-100 text-green-700 text-[10px] sm:text-xs">{pledgesData.approved.status}</Badge>
                   </div>
                   {pledgesData.approved.org_phone && (
-                    <p className="text-sm text-green-600" dir="ltr">{pledgesData.approved.org_phone}</p>
+                    <p className="text-xs text-green-600" dir="ltr">{pledgesData.approved.org_phone}</p>
                   )}
                 </div>
               )}
 
-              {/* Pending pledges */}
               {pledgesData.pledges.length > 0 && (
-                <div className="mt-4 space-y-3">
+                <div className="mt-3 sm:mt-4 space-y-2.5 sm:space-y-3">
                   {pledgesData.pledges.map((pledge) => (
-                    <div key={pledge.assignment_id} className="border border-gray-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="font-medium text-gray-900">{pledge.org_name}</p>
-                          <p className="text-xs text-gray-500">
-                            {pledge.org_total_completed} تكفل مكتمل
+                    <div key={pledge.assignment_id} className="border border-gray-200 rounded-xl p-3 sm:p-4">
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 text-sm truncate">{pledge.org_name}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">
+                            {pledge.org_total_completed} مكتمل
                             {pledge.org_phone && <span className="mr-2" dir="ltr">{pledge.org_phone}</span>}
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setShowApproveForm(
-                              showApproveForm === pledge.assignment_id ? null : pledge.assignment_id
-                            );
-                            setApproveShowPhone(false);
-                            setApproveContactName('');
-                            setApproveContactPhone('');
-                          }}
-                        >
-                          الموافقة
-                        </Button>
+                        <Button size="sm" onClick={() => {
+                          setShowApproveForm(showApproveForm === pledge.assignment_id ? null : pledge.assignment_id);
+                          setApproveShowPhone(false); setApproveContactName(''); setApproveContactPhone('');
+                        }}>الموافقة</Button>
                       </div>
                       {pledge.notes && (
-                        <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">{pledge.notes}</p>
-                      )}
-                      {pledge.created_at && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(pledge.created_at).toLocaleString('ar-MA')}
-                        </p>
+                        <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded-lg">{pledge.notes}</p>
                       )}
 
-                      {/* Approve Form */}
                       {showApproveForm === pledge.assignment_id && (
-                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-3">
-                          <p className="text-sm font-medium text-blue-800">خيارات التواصل</p>
-                          
+                        <div className="mt-2.5 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2.5 sm:space-y-3">
+                          <p className="text-xs sm:text-sm font-medium text-blue-800">خيارات التواصل</p>
                           <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={approveShowPhone}
-                              onChange={(e) => setApproveShowPhone(e.target.checked)}
-                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                            />
-                            <span className="text-sm text-gray-700">
-                              إظهار رقم المواطن ({request.requester_phone}) للمؤسسة
-                            </span>
+                            <input type="checkbox" checked={approveShowPhone} onChange={(e) => setApproveShowPhone(e.target.checked)} className="rounded border-gray-300 text-primary-600" />
+                            <span className="text-xs sm:text-sm text-gray-700">إظهار رقم المواطن</span>
                           </label>
-
-                          <div className="text-xs text-gray-500 -mt-1">أو أدخل رقم واسم آخر للتواصل:</div>
-                          
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                              <label className="text-xs text-gray-600 block mb-1">اسم التواصل</label>
-                              <input
-                                type="text"
-                                value={approveContactName}
-                                onChange={(e) => setApproveContactName(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                placeholder="اسم التواصل..."
-                              />
+                              <label className="text-[10px] sm:text-xs text-gray-600 block mb-0.5">اسم التواصل</label>
+                              <input type="text" value={approveContactName} onChange={(e) => setApproveContactName(e.target.value)} className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-primary-500" placeholder="اسم..." />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-600 block mb-1">رقم التواصل</label>
-                              <input
-                                type="tel"
-                                dir="ltr"
-                                value={approveContactPhone}
-                                onChange={(e) => setApproveContactPhone(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                placeholder="06XXXXXXXX"
-                              />
+                              <label className="text-[10px] sm:text-xs text-gray-600 block mb-0.5">رقم التواصل</label>
+                              <input type="tel" dir="ltr" value={approveContactPhone} onChange={(e) => setApproveContactPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-primary-500" placeholder="06..." />
                             </div>
                           </div>
-
                           <div className="flex gap-2">
-                            <Button
-                              className="flex-1"
-                              onClick={() => handleApproveOrg(pledge.assignment_id)}
-                              loading={actionLoading}
-                            >
-                              تأكيد الموافقة على {pledge.org_name}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowApproveForm(null)}
-                            >
-                              إلغاء
-                            </Button>
+                            <Button className="flex-1 text-xs sm:text-sm" onClick={() => handleApproveOrg(pledge.assignment_id)} loading={actionLoading}>تأكيد</Button>
+                            <Button variant="ghost" size="sm" onClick={() => setShowApproveForm(null)}>إلغاء</Button>
                           </div>
                         </div>
                       )}
@@ -781,163 +539,66 @@ export default function InspectorRequestDetailPage() {
                   ))}
                 </div>
               )}
-
-              {pledgesData.pledge_count === 0 && !pledgesData.approved && (
-                <p className="text-sm text-gray-400 mt-3">لم تتعهد أي مؤسسة بعد</p>
-              )}
             </Card>
           )}
         </div>
 
         {/* Sidebar - Actions */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Quick Actions */}
           <Card>
             <CardTitle>الإجراءات</CardTitle>
-            <div className="space-y-3 mt-4">
+            <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
               {canActivate && (
-                <Button
-                  className="w-full"
-                  onClick={handleActivate}
-                  loading={actionLoading}
-                >
-                  تفعيل الطلب (أصبح المراقب المسؤول)
-                </Button>
+                <Button className="w-full text-xs sm:text-sm" onClick={handleActivate} loading={actionLoading}>تفعيل الطلب</Button>
               )}
-
               {canAssign && (
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => setShowAssignForm(!showAssignForm)}
-                >
-                  ربط بجمعية
-                </Button>
+                <Button variant="secondary" className="w-full text-xs sm:text-sm" onClick={() => setShowAssignForm(!showAssignForm)}>ربط بجمعية</Button>
               )}
-
               {canReject && (
-                <Button
-                  variant="ghost"
-                  className="w-full text-orange-600 hover:bg-orange-50"
-                  onClick={() => setShowRejectForm(!showRejectForm)}
-                >
-                  رفض الطلب
-                </Button>
+                <Button variant="ghost" className="w-full text-xs sm:text-sm text-orange-600 hover:bg-orange-50" onClick={() => setShowRejectForm(!showRejectForm)}>رفض الطلب</Button>
               )}
-
               {canDelete && (
-                <Button
-                  variant="danger"
-                  className="w-full"
-                  onClick={handleDelete}
-                  loading={actionLoading}
-                >
-                  حذف الطلب
-                </Button>
+                <Button variant="danger" className="w-full text-xs sm:text-sm" onClick={handleDelete} loading={actionLoading}>حذف الطلب</Button>
               )}
             </div>
           </Card>
 
           {/* Status & Urgency */}
           <Card>
-            <CardTitle>تغيير الحالة والأهمية</CardTitle>
-            <div className="space-y-4 mt-4">
-              {/* Status Change */}
+            <CardTitle>الحالة والأهمية</CardTitle>
+            <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
               <div>
-                <Select
-                  label="حالة الطلب"
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  options={ALL_REQUEST_STATUSES.map((s) => ({
-                    value: s,
-                    label: REQUEST_STATUS_LABELS[s],
-                  }))}
-                />
+                <Select label="حالة الطلب" value={newStatus} onChange={(e) => setNewStatus(e.target.value)} options={ALL_REQUEST_STATUSES.map((s) => ({ value: s, label: REQUEST_STATUS_LABELS[s] }))} />
                 {newStatus !== request.status && (
-                  <Button
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={handleStatusChange}
-                    loading={actionLoading}
-                  >
-                    تأكيد تغيير الحالة
-                  </Button>
+                  <Button size="sm" className="w-full mt-2 text-xs sm:text-sm" onClick={handleStatusChange} loading={actionLoading}>تأكيد التغيير</Button>
                 )}
               </div>
-
-              {/* Urgency Toggle */}
               <div className="pt-2 border-t border-gray-100">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">مستعجل</span>
-                  <button
-                    onClick={handleUrgencyToggle}
-                    disabled={actionLoading}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      request.is_urgent === 1 ? 'bg-red-500' : 'bg-gray-300'
-                    } disabled:opacity-50`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        request.is_urgent === 1 ? 'translate-x-1' : 'translate-x-6'
-                      }`}
-                    />
+                  <span className="text-xs sm:text-sm text-gray-600">مستعجل</span>
+                  <button onClick={handleUrgencyToggle} disabled={actionLoading} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${request.is_urgent === 1 ? 'bg-red-500' : 'bg-gray-300'} disabled:opacity-50`}>
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${request.is_urgent === 1 ? 'translate-x-1' : 'translate-x-6'}`} />
                   </button>
                 </div>
-                {request.is_urgent === 1 && (
-                  <p className="text-xs text-red-500 mt-1">هذا الطلب مصنف كمستعجل</p>
-                )}
               </div>
             </div>
           </Card>
 
-          {/* Assign to organization (existing flow) */}
+          {/* Assign Form */}
           {showAssignForm && (
             <Card>
               <CardTitle>ربط بجمعية</CardTitle>
-              <div className="space-y-4 mt-4">
-                <Select
-                  label="اختر الجمعية"
-                  value={selectedOrgId}
-                  onChange={(e) => setSelectedOrgId(e.target.value)}
-                  placeholder="-- اختر جمعية --"
-                  options={organizations.map((org) => ({
-                    value: org.id,
-                    label: `${org.name} (${org.total_completed} مكتمل)`,
-                  }))}
-                />
-
-                <Textarea
-                  label="ملاحظات (اختياري)"
-                  placeholder="ملاحظات حول الربط..."
-                  value={assignNotes}
-                  onChange={(e) => setAssignNotes(e.target.value)}
-                  rows={3}
-                />
-
+              <div className="space-y-3 mt-3">
+                <Select label="الجمعية" value={selectedOrgId} onChange={(e) => setSelectedOrgId(e.target.value)} placeholder="-- اختر --" options={organizations.map((org) => ({ value: org.id, label: `${org.name} (${org.total_completed})` }))} />
+                <Textarea label="ملاحظات" placeholder="ملاحظات..." value={assignNotes} onChange={(e) => setAssignNotes(e.target.value)} rows={2} />
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={allowPhoneAccess}
-                    onChange={(e) => setAllowPhoneAccess(e.target.checked)}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-600">السماح للجمعية برؤية رقم الهاتف</span>
+                  <input type="checkbox" checked={allowPhoneAccess} onChange={(e) => setAllowPhoneAccess(e.target.checked)} className="rounded border-gray-300 text-primary-600" />
+                  <span className="text-xs sm:text-sm text-gray-600">السماح برؤية الهاتف</span>
                 </label>
-
                 <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={handleAssign}
-                    loading={actionLoading}
-                  >
-                    تأكيد الربط
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowAssignForm(false)}
-                  >
-                    إلغاء
-                  </Button>
+                  <Button className="flex-1 text-xs sm:text-sm" onClick={handleAssign} loading={actionLoading}>تأكيد</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowAssignForm(false)}>إلغاء</Button>
                 </div>
               </div>
             </Card>
@@ -947,30 +608,11 @@ export default function InspectorRequestDetailPage() {
           {showRejectForm && (
             <Card>
               <CardTitle>رفض الطلب</CardTitle>
-              <div className="space-y-4 mt-4">
-                <Textarea
-                  label="سبب الرفض (اختياري)"
-                  placeholder="أدخل سبب الرفض..."
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  rows={3}
-                />
-
+              <div className="space-y-3 mt-3">
+                <Textarea label="السبب" placeholder="سبب الرفض..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} rows={2} />
                 <div className="flex gap-2">
-                  <Button
-                    variant="danger"
-                    className="flex-1"
-                    onClick={handleReject}
-                    loading={actionLoading}
-                  >
-                    تأكيد الرفض
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowRejectForm(false)}
-                  >
-                    إلغاء
-                  </Button>
+                  <Button variant="danger" className="flex-1 text-xs sm:text-sm" onClick={handleReject} loading={actionLoading}>تأكيد الرفض</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowRejectForm(false)}>إلغاء</Button>
                 </div>
               </div>
             </Card>
@@ -979,29 +621,17 @@ export default function InspectorRequestDetailPage() {
           {/* Inspector Notes */}
           <Card>
             <CardTitle>ملاحظات المراقب</CardTitle>
-            <div className="space-y-3 mt-4">
-              <Textarea
-                placeholder="أضف ملاحظاتك حول هذا الطلب..."
-                value={inspectorNotes}
-                onChange={(e) => setInspectorNotes(e.target.value)}
-                rows={4}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleSaveNotes}
-                loading={actionLoading}
-              >
-                حفظ الملاحظات
-              </Button>
+            <div className="space-y-2 sm:space-y-3 mt-3">
+              <Textarea placeholder="أضف ملاحظاتك..." value={inspectorNotes} onChange={(e) => setInspectorNotes(e.target.value)} rows={3} />
+              <Button variant="secondary" size="sm" onClick={handleSaveNotes} loading={actionLoading}>حفظ الملاحظات</Button>
             </div>
           </Card>
 
-          {/* Admin Notes (read-only) */}
+          {/* Admin Notes */}
           {request.admin_notes && (
             <Card>
               <CardTitle>ملاحظات الإدارة</CardTitle>
-              <p className="text-gray-600 text-sm mt-2 whitespace-pre-wrap">{request.admin_notes}</p>
+              <p className="text-gray-600 text-xs sm:text-sm mt-2 whitespace-pre-wrap">{request.admin_notes}</p>
             </Card>
           )}
         </div>
