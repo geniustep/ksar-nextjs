@@ -85,12 +85,12 @@ export default function InspectorAuthPage() {
             <Input
               label="كود الدخول"
               type="text"
-              placeholder="XXXXXX"
+              placeholder="مثال: ABCD1234"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
               required
               dir="ltr"
-              maxLength={6}
+              maxLength={8}
             />
 
             <Button type="submit" className="w-full" loading={loading}>

@@ -354,10 +354,10 @@ export default function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                      placeholder={inputType === 'phone' ? 'XXXXXX' : '••••••••'}
+                      placeholder={inputType === 'phone' ? 'XXXX-XXXX' : '••••••••'}
                       required
                       dir="ltr"
-                      maxLength={inputType === 'phone' ? 6 : undefined}
+                      maxLength={inputType === 'phone' ? 8 : undefined}
                       className={cn(
                         'w-full rounded-xl border border-gray-200 pr-11 pl-11 py-3 text-sm transition-all',
                         'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',

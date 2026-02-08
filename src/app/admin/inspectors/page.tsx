@@ -107,8 +107,8 @@ export default function AdminInspectorsPage() {
   const handleSetCode = async (useCustom: boolean) => {
     if (!setCodeInspector) return;
 
-    if (useCustom && customCode.length !== 6) {
-      setSetCodeError('الكود يجب أن يكون 6 أرقام');
+    if (useCustom && (customCode.length < 4 || customCode.length > 8)) {
+      setSetCodeError('الكود يجب أن يكون بين 4 و 8 أحرف');
       return;
     }
 
@@ -218,16 +218,22 @@ export default function AdminInspectorsPage() {
                     <td className="py-3 px-3 text-gray-600" dir="ltr">{inspector.phone || '-'}</td>
                     <td className="py-3 px-3">
                       {inspector.access_code ? (
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded" dir="ltr">
-                            {inspector.access_code}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs bg-primary-50 text-primary-700 px-2.5 py-1.5 rounded-lg font-semibold tracking-wider border border-primary-100" dir="ltr">
+                            {inspector.access_code.length > 4
+                              ? `${inspector.access_code.slice(0, 4)}-${inspector.access_code.slice(4)}`
+                              : inspector.access_code}
                           </span>
                           <button
                             onClick={() => copyInspectorCode(inspector)}
-                            className="text-xs text-gray-500 hover:text-primary-600 transition-colors"
+                            className={`text-xs px-2 py-1.5 rounded-lg transition-all font-medium ${
+                              copiedInspectorId === inspector.id
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600 hover:bg-primary-50 hover:text-primary-700'
+                            }`}
                             title="نسخ الكود"
                           >
-                            {copiedInspectorId === inspector.id ? '✓' : '📋'}
+                            {copiedInspectorId === inspector.id ? '✓ تم' : '📋 نسخ'}
                           </button>
                         </div>
                       ) : (
@@ -353,22 +359,22 @@ export default function AdminInspectorsPage() {
               <input
                 type="text"
                 value={customCode}
-                onChange={(e) => setCustomCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-                placeholder="أدخل 6 أرقام"
-                maxLength={6}
+                onChange={(e) => setCustomCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8))}
+                placeholder="مثال: ABCD1234"
+                maxLength={8}
                 dir="ltr"
-                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-center font-mono text-xl tracking-[0.4em] focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none"
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-center font-mono text-lg tracking-[0.3em] focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none uppercase"
               />
               <Button
                 onClick={() => handleSetCode(true)}
                 loading={setCodeLoading}
-                disabled={customCode.length !== 6}
+                disabled={customCode.length < 4 || customCode.length > 8}
                 className="whitespace-nowrap"
               >
                 تعيين
               </Button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">اكتب كود من 6 أرقام من اختيارك</p>
+            <p className="text-xs text-gray-400 mt-2">اكتب كود من 4 إلى 8 أحرف وأرقام من اختيارك</p>
           </div>
 
           {/* Separator */}
@@ -407,8 +413,10 @@ export default function AdminInspectorsPage() {
 
           <div className="bg-primary-50 border-2 border-primary-200 rounded-2xl p-6 mb-4">
             <p className="text-xs text-gray-500 mb-2">كود الدخول</p>
-            <p className="text-4xl font-mono font-bold text-primary-700 tracking-[0.5em]" dir="ltr">
-              {displayCode}
+            <p className="text-3xl sm:text-4xl font-mono font-bold text-primary-700 tracking-[0.3em]" dir="ltr">
+              {displayCode.length > 4
+                ? `${displayCode.slice(0, 4)}-${displayCode.slice(4)}`
+                : displayCode}
             </p>
           </div>
 
