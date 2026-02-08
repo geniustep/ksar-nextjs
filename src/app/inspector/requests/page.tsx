@@ -50,6 +50,7 @@ function InspectorRequestsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [urgentOnly, setUrgentOnly] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
+  const [unclaimedOnly, setUnclaimedOnly] = useState(false);
 
   // Activate modal
   const [showActivateModal, setShowActivateModal] = useState(false);
@@ -147,6 +148,12 @@ function InspectorRequestsContent() {
   const totalPages = Math.ceil(total / limit);
   const activeFilterCount = [statusFilter, categoryFilter, searchQuery, urgentOnly, mineOnly].filter(Boolean).length;
 
+  // Client-side filter: unclaimed requests (no inspector assigned)
+  const displayedRequests = unclaimedOnly
+    ? requests.filter((r) => !r.inspector_name)
+    : requests;
+  const unclaimedCount = requests.filter((r) => !r.inspector_name).length;
+
   return (
     <DashboardLayout>
       <div className="mb-4 sm:mb-6">
@@ -226,20 +233,44 @@ function InspectorRequestsContent() {
         </div>
       ) : (
         <>
-          {/* Mobile: Cards */}
+          {/* Mobile: Unclaimed toggle + Cards */}
           <div className="sm:hidden space-y-2.5">
-            {requests.map((req) => (
+            {/* Unclaimed filter toggle */}
+            <button
+              onClick={() => setUnclaimedOnly(!unclaimedOnly)}
+              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${
+                unclaimedOnly
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-800'
+                  : 'bg-white border-gray-100 text-gray-600'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{unclaimedOnly ? '🔓' : '🔒'}</span>
+                <span className="text-xs font-medium">بدون مراقب مسؤول</span>
+              </div>
+              <Badge className={unclaimedOnly ? 'bg-indigo-100 text-indigo-700 text-[10px]' : 'bg-gray-100 text-gray-600 text-[10px]'}>
+                {unclaimedCount}
+              </Badge>
+            </button>
+
+            {displayedRequests.map((req) => (
               <Link key={req.id} href={`/inspector/requests/${req.id}`} className="block">
-                <div className="bg-white rounded-xl border border-gray-100 p-3 active:bg-gray-50 transition-colors">
+                <div className={`rounded-xl border p-3 active:bg-gray-50 transition-colors ${
+                  req.inspector_name
+                    ? 'bg-indigo-50/40 border-indigo-100'
+                    : 'bg-white border-gray-100'
+                }`}>
                   <div className="flex items-start justify-between mb-1.5">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm truncate">{req.requester_name}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5" dir="ltr">
-                        {req.requester_phone}
-                        {phoneCounts[req.requester_phone] > 1 && (
-                          <span className="text-orange-500 mr-1">({phoneCounts[req.requester_phone]} طلبات)</span>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{req.requester_name}</p>
+                        {phoneCounts[req.requester_phone] !== undefined && (
+                          <Badge className={`${phoneCounts[req.requester_phone] > 3 ? 'bg-orange-100 text-orange-800' : phoneCounts[req.requester_phone] > 1 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500'} text-[9px] px-1.5 py-0`}>
+                            {phoneCounts[req.requester_phone]} {phoneCounts[req.requester_phone] > 1 ? 'طلبات' : 'طلب'}
+                          </Badge>
                         )}
-                      </p>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5" dir="ltr">{req.requester_phone}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 mr-2">
                       {req.is_flagged === 1 && <Badge className="bg-orange-100 text-orange-800 text-[10px]">⚠️ مشبوه</Badge>}
@@ -268,7 +299,7 @@ function InspectorRequestsContent() {
                   </div>
                   <div className="flex items-center gap-1 flex-wrap mb-2">
                     {req.inspector_name && (
-                      <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+                      <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md border border-indigo-100">
                         👁️ {req.inspector_name}
                       </span>
                     )}
@@ -303,6 +334,21 @@ function InspectorRequestsContent() {
 
           {/* Desktop: Table */}
           <Card className="hidden sm:block">
+            {/* Desktop unclaimed filter */}
+            <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-100">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={unclaimedOnly}
+                  onChange={(e) => setUnclaimedOnly(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm text-gray-600">بدون مراقب مسؤول</span>
+              </label>
+              {unclaimedOnly && (
+                <Badge className="bg-indigo-100 text-indigo-700 text-xs">{unclaimedCount} طلب</Badge>
+              )}
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -322,8 +368,8 @@ function InspectorRequestsContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {requests.map((req) => (
-                    <tr key={req.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                  {displayedRequests.map((req) => (
+                    <tr key={req.id} className={`border-b border-gray-50 hover:bg-gray-50/50 ${req.inspector_name ? 'bg-indigo-50/30' : ''}`}>
                       <td className="py-3 px-2">
                         <Link href={`/inspector/requests/${req.id}`} className="font-medium text-primary-600 hover:text-primary-700">{req.requester_name}</Link>
                       </td>

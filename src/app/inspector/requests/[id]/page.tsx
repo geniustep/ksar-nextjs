@@ -378,6 +378,34 @@ export default function InspectorRequestDetailPage() {
         <div className="bg-green-50 border border-green-200 text-green-700 text-xs sm:text-sm p-3 rounded-xl mb-4">{success}</div>
       )}
 
+      {/* Mobile: Claim section at top */}
+      <div className="lg:hidden mb-4">
+        {canClaim ? (
+          <Button className="w-full text-xs bg-indigo-600 hover:bg-indigo-700" onClick={handleClaim} loading={actionLoading}>
+            🔒 تكلف بهذا الطلب
+          </Button>
+        ) : isSupervisor ? (
+          <div className="flex items-center gap-2 p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+            <span className="text-indigo-600 font-bold text-sm">✓</span>
+            <span className="text-xs text-indigo-800 font-medium flex-1">أنت مكلف بهذا الطلب</span>
+            <button
+              onClick={handleUnclaim}
+              disabled={actionLoading}
+              className="text-[10px] text-red-500 hover:text-red-700 disabled:opacity-50"
+            >
+              إلغاء التكلف
+            </button>
+          </div>
+        ) : request.inspector_id ? (
+          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-xs text-amber-800">
+              <span className="font-medium">مكلف به:</span>{' '}
+              {`#${request.inspector_id?.slice(0, 8)}`}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -626,8 +654,8 @@ export default function InspectorRequestDetailPage() {
 
         {/* Sidebar - Actions */}
         <div className="space-y-4 sm:space-y-6">
-          {/* Claim / Inspector Assignment */}
-          <Card>
+          {/* Claim / Inspector Assignment - Desktop only (mobile is above) */}
+          <Card className="hidden lg:block">
             <CardTitle>التكلف بالحالة</CardTitle>
             <div className="mt-3 sm:mt-4">
               {canClaim ? (
