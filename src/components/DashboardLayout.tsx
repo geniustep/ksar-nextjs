@@ -35,6 +35,7 @@ const orgNav: NavItem[] = [
 const inspectorNav: NavItem[] = [
   { label: 'لوحة التحكم', href: '/inspector', icon: '📊' },
   { label: 'الطلبات', href: '/inspector/requests', icon: '📋' },
+  { label: 'الجمعيات', href: '/inspector/organizations', icon: '🏢' },
 ];
 
 const citizenNav: NavItem[] = [

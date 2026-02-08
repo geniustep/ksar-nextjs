@@ -127,20 +127,20 @@ export default function OrgRegisterPage() {
         ) : (
           <div>
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-neutral-dark">تسجيل مؤسسة جديدة</h1>
+              <h1 className="text-2xl font-bold text-neutral-dark">تسجيل جمعية أو مبادرة إنسانية جديدة</h1>
               <p className="text-gray-500 mt-2">
-                سجّل مؤسستك أو جمعيتك للمساهمة في تقديم المساعدات
+                سجّل جمعيتك أو مبادرتك للمساهمة في تقديم المساعدات
               </p>
             </div>
 
             {/* Already have account? */}
             <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 text-center mb-6">
-              <p className="text-sm text-primary-700 mb-1">لديك حساب مؤسسة بالفعل؟</p>
+              <p className="text-sm text-primary-700 mb-1">لديك حساب جمعية أو مبادرة إنسانية بالفعل؟</p>
               <Link
                 href="/org-auth"
                 className="text-sm text-primary-700 font-semibold hover:text-primary-800 underline"
               >
-                اذهب لصفحة دخول المؤسسات
+                اذهب لصفحة دخول الجمعيات والمبادرات الإنسانية
               </Link>
             </div>
 
@@ -153,7 +153,7 @@ export default function OrgRegisterPage() {
                 )}
 
                 <Input
-                  label="اسم المؤسسة / الجمعية"
+                  label="اسم الجمعية / المبادرة"
                   name="name"
                   placeholder="مثال: جمعية الخير للتنمية"
                   value={form.name}
@@ -174,14 +174,14 @@ export default function OrgRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    كود الدخول المفضل (اختياري)
+                    كود الدخول المفضل 
                   </label>
                   <input
-                    type="text"
+                    type="password"
                     name="preferred_code"
                     value={form.preferred_code}
                     onChange={(e) => setForm({ ...form, preferred_code: e.target.value.replace(/\s/g, '').slice(0, 20) })}
-                    placeholder="مثال: ,,07Genius"
+                    placeholder="أدخل كود الدخول"
                     maxLength={20}
                     dir="ltr"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-mono tracking-wider focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none placeholder:text-gray-400 text-gray-800"

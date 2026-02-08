@@ -460,6 +460,42 @@ export interface OrganizationBrief {
   total_completed: number;
 }
 
+export interface OrgAssignmentRequest {
+  id: string;
+  requester_name: string;
+  category: RequestCategory;
+  description: string | null;
+  city: string | null;
+  region: string | null;
+  family_members: number;
+  quantity: number;
+  is_urgent: number;
+  priority_score: number;
+  status: RequestStatus;
+  created_at: string;
+}
+
+export interface OrgActiveAssignment {
+  id: string;
+  status: AssignmentStatus;
+  notes: string | null;
+  created_at: string | null;
+  request: OrgAssignmentRequest;
+}
+
+export interface OrganizationWithAssignments {
+  id: string;
+  name: string;
+  description: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  service_types: string[];
+  coverage_areas: string[];
+  total_completed: number;
+  total_failed: number;
+  active_assignments: OrgActiveAssignment[];
+}
+
 // === Organization Management (Admin) ===
 
 export interface OrganizationCreateRequest {

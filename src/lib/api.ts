@@ -49,6 +49,7 @@ import type {
   InspectorCreatedResponse,
   InspectorListResponse,
   OrganizationBrief,
+  OrganizationWithAssignments,
   OrganizationCreateRequest,
   OrganizationCreatedResponse,
   OrganizationLoginRequest,
@@ -634,6 +635,10 @@ export const inspectorApi = {
 
   getOrganizations(): Promise<{ items: OrganizationBrief[] }> {
     return request('/api/v1/inspector/organizations');
+  },
+
+  getOrganizationsWithAssignments(): Promise<{ items: OrganizationWithAssignments[] }> {
+    return request('/api/v1/inspector/organizations/details');
   },
 
   getPhoneRequestCount(phone: string): Promise<{ phone: string; count: number }> {
