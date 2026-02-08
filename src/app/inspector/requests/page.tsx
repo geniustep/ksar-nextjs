@@ -238,13 +238,18 @@ function InspectorRequestsContent() {
                       </>
                     )}
                   </div>
-                  {req.inspector_name && (
-                    <div className="flex items-center gap-1 mb-2">
+                  <div className="flex items-center gap-1 flex-wrap mb-2">
+                    {req.inspector_name && (
                       <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
                         👁️ {req.inspector_name}
                       </span>
-                    </div>
-                  )}
+                    )}
+                    {req.org_name && (
+                      <span className="text-[10px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md">
+                        🏢 {req.org_name}
+                      </span>
+                    )}
+                  </div>
                   {req.status === 'pending' && (
                     <div className="flex gap-2 pt-2 border-t border-gray-50">
                       <button
@@ -281,6 +286,7 @@ function InspectorRequestsContent() {
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">المدينة</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">المنطقة</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">المراقب</th>
+                    <th className="text-right py-3 px-2 text-gray-500 font-medium">المؤسسة</th>
                     <th className="text-center py-3 px-2 text-gray-500 font-medium">تعهدات</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">الحالة</th>
                     <th className="text-right py-3 px-2 text-gray-500 font-medium">التاريخ</th>
@@ -307,6 +313,13 @@ function InspectorRequestsContent() {
                       <td className="py-3 px-2">
                         {req.inspector_name ? (
                           <span className="text-xs text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">{req.inspector_name}</span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-2">
+                        {req.org_name ? (
+                          <span className="text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">{req.org_name}</span>
                         ) : (
                           <span className="text-gray-300">-</span>
                         )}

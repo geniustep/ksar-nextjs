@@ -19,6 +19,7 @@ const adminNav: NavItem[] = [
   { label: 'الإحصائيات', href: '/admin', icon: '📊', mobileLabel: 'الرئيسية' },
   { label: 'الطلبات', href: '/admin/requests', icon: '📋' },
   { label: 'المؤسسات', href: '/admin/organizations', icon: '🏢' },
+  { label: 'التعهدات', href: '/admin/pledges', icon: '🤝', mobileLabel: 'تعهدات' },
   { label: 'المراقبون', href: '/admin/inspectors', icon: '👁️', mobileLabel: 'المراقبون' },
   { label: 'المواطنون', href: '/admin/citizens', icon: '👥' },
 ];
@@ -37,6 +38,7 @@ const orgNav: NavItem[] = [
 const inspectorNav: NavItem[] = [
   { label: 'لوحة التحكم', href: '/inspector', icon: '📊', mobileLabel: 'الرئيسية' },
   { label: 'الطلبات', href: '/inspector/requests', icon: '📋' },
+  { label: 'التعهدات', href: '/inspector/pledges', icon: '🤝', mobileLabel: 'تعهدات' },
   { label: 'المشبوهة', href: '/inspector/flagged', icon: '⚠️', mobileLabel: 'تنبيهات' },
   { label: 'الجمعيات', href: '/inspector/organizations', icon: '🏢' },
   { label: 'الملف الشخصي', href: '/inspector/profile', icon: '👤', mobileLabel: 'حسابي' },

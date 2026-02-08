@@ -67,6 +67,8 @@ import type {
   AdminListResponse,
   AdminCreatedResponse,
   AdminCreateRequest,
+  OrgPledgesResponse,
+  OrgPledgesStatsResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ksar.geniura.com';
@@ -399,6 +401,14 @@ export const adminApi = {
     return request('/api/v1/admin/stats/organizations');
   },
 
+  getOrgPledges(orgId: string, params?: { page?: number; limit?: number }): Promise<OrgPledgesResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    return request(`/api/v1/admin/organizations/${orgId}/pledges${qs ? '?' + qs : ''}`);
+  },
+
   getOrganizations(params?: {
     status?: string;
     page?: number;
@@ -682,6 +692,18 @@ export const inspectorApi = {
     if (params?.limit) searchParams.set('limit', String(params.limit));
     const qs = searchParams.toString();
     return request(`/api/v1/inspector/flagged-requests${qs ? '?' + qs : ''}`);
+  },
+
+  getOrganizationsPledgesStats(): Promise<OrgPledgesStatsResponse> {
+    return request('/api/v1/inspector/organizations-pledges');
+  },
+
+  getOrgPledges(orgId: string, params?: { page?: number; limit?: number }): Promise<OrgPledgesResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    return request(`/api/v1/inspector/organizations/${orgId}/pledges${qs ? '?' + qs : ''}`);
   },
 
   updateRequestStatus(requestId: string, data: { status?: RequestStatus; is_urgent?: number }): Promise<{ message: string; data: RequestResponse }> {

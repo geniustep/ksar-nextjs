@@ -149,7 +149,12 @@ export default function AdminRequestsPage() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{req.requester_name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5" dir="ltr">{req.requester_phone}</p>
+                      <p className="text-xs text-gray-400 mt-0.5" dir="ltr">
+                        {req.requester_phone}
+                        {req.phone_request_count && req.phone_request_count > 1 && (
+                          <span className="text-orange-500 mr-1">({req.phone_request_count} طلبات)</span>
+                        )}
+                      </p>
                     </div>
                     <div className="flex flex-col items-end gap-1 mr-2">
                       <Badge className={`${REQUEST_STATUS_COLORS[req.status]} text-xs`}>
@@ -167,13 +172,23 @@ export default function AdminRequestsPage() {
                     <span className="text-gray-300">|</span>
                     <span>{formatRelativeTime(req.created_at)}</span>
                   </div>
-                  {req.inspector_name && (
-                    <div className="flex items-center gap-1 mt-2">
+                  <div className="flex items-center gap-1 flex-wrap mt-2">
+                    {req.inspector_name && (
                       <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
                         👁️ {req.inspector_name}
                       </span>
-                    </div>
-                  )}
+                    )}
+                    {req.org_name && (
+                      <span className="text-[10px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md">
+                        🏢 {req.org_name}
+                      </span>
+                    )}
+                    {req.pledge_count !== undefined && req.pledge_count > 0 && (
+                      <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">
+                        {req.pledge_count} تعهد
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
                     <span className="text-xs text-gray-400">الأولوية: <span className={`font-bold ${req.is_urgent ? 'text-red-600' : 'text-gray-700'}`}>{req.priority_score}</span></span>
                     <button
@@ -194,50 +209,70 @@ export default function AdminRequestsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 text-gray-500 border-b">
-                    <th className="text-right px-4 py-3">الاسم</th>
-                    <th className="text-right px-4 py-3">التصنيف</th>
-                    <th className="text-center px-4 py-3">الحالة</th>
-                    <th className="text-center px-4 py-3">الأولوية</th>
-                    <th className="text-right px-4 py-3">المدينة</th>
-                    <th className="text-right px-4 py-3">المنطقة</th>
-                    <th className="text-right px-4 py-3">المراقب</th>
-                    <th className="text-right px-4 py-3">التاريخ</th>
-                    <th className="text-center px-4 py-3">إجراءات</th>
+                    <th className="text-right px-3 py-3">الاسم</th>
+                    <th className="text-center px-2 py-3">طلبات</th>
+                    <th className="text-right px-2 py-3">التصنيف</th>
+                    <th className="text-center px-2 py-3">الحالة</th>
+                    <th className="text-center px-2 py-3">الأولوية</th>
+                    <th className="text-right px-2 py-3">المدينة</th>
+                    <th className="text-right px-2 py-3">المراقب</th>
+                    <th className="text-right px-2 py-3">المؤسسة</th>
+                    <th className="text-center px-2 py-3">تعهدات</th>
+                    <th className="text-right px-2 py-3">التاريخ</th>
+                    <th className="text-center px-2 py-3">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map((req) => (
                     <tr key={req.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         <div>
                           <span className="font-medium">{req.requester_name}</span>
                           <p className="text-xs text-gray-400" dir="ltr">{req.requester_phone}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span>{CATEGORY_ICONS[req.category]} {CATEGORY_LABELS[req.category]}</span>
+                      <td className="px-2 py-3 text-center">
+                        {req.phone_request_count !== undefined ? (
+                          <Badge className={req.phone_request_count > 3 ? 'bg-orange-100 text-orange-800' : req.phone_request_count > 1 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}>
+                            {req.phone_request_count}
+                          </Badge>
+                        ) : <span className="text-gray-300">-</span>}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-2 py-3">
+                        <span className="text-xs">{CATEGORY_ICONS[req.category]} {CATEGORY_LABELS[req.category]}</span>
+                      </td>
+                      <td className="px-2 py-3 text-center">
                         <Badge className={REQUEST_STATUS_COLORS[req.status]}>
                           {REQUEST_STATUS_LABELS[req.status]}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-2 py-3 text-center">
                         <span className={`font-medium ${req.is_urgent ? 'text-red-600' : ''}`}>
                           {req.priority_score}{req.is_urgent === 1 && ' !'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{req.city || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{req.region || '-'}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3 text-sm text-gray-500">{req.city || '-'}</td>
+                      <td className="px-2 py-3">
                         {req.inspector_name ? (
                           <span className="text-xs text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">{req.inspector_name}</span>
                         ) : (
                           <span className="text-sm text-gray-300">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-400">{formatRelativeTime(req.created_at)}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-2 py-3">
+                        {req.org_name ? (
+                          <span className="text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">{req.org_name}</span>
+                        ) : (
+                          <span className="text-sm text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-3 text-center">
+                        {req.pledge_count !== undefined && req.pledge_count > 0 ? (
+                          <Badge className="bg-blue-100 text-blue-800">{req.pledge_count}</Badge>
+                        ) : <span className="text-gray-300">-</span>}
+                      </td>
+                      <td className="px-2 py-3 text-sm text-gray-400">{formatRelativeTime(req.created_at)}</td>
+                      <td className="px-2 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Link href={`/admin/requests/${req.id}`}>
                             <Button variant="ghost" size="sm">تفاصيل</Button>

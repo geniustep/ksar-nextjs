@@ -179,6 +179,8 @@ export interface RequestResponse {
   pledge_count?: number;
   already_pledged?: boolean;
   inspector_name?: string | null;
+  phone_request_count?: number;
+  org_name?: string | null;
 }
 
 export interface CitizenRequestResponse {
@@ -699,4 +701,52 @@ export interface CitizenListItem {
   total_requests: number;
   supervisor_id: string | null;
   supervisor_name: string | null;
+}
+
+// === Organization Pledges ===
+
+export interface OrgPledgeItem {
+  assignment_id: string;
+  assignment_status: string;
+  assignment_created_at: string | null;
+  assignment_completed_at?: string | null;
+  assignment_notes?: string | null;
+  request_id: string;
+  requester_name: string;
+  requester_phone?: string;
+  category: string;
+  request_status: string;
+  city: string | null;
+  region: string | null;
+  inspector_name: string | null;
+  created_at: string;
+}
+
+export interface OrgPledgesResponse {
+  organization: { id: string; name: string };
+  stats: {
+    total: number;
+    pledged: number;
+    in_progress: number;
+    completed: number;
+    failed: number;
+  };
+  items: OrgPledgeItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface OrgPledgesStatsItem {
+  id: string;
+  name: string;
+  total_assignments: number;
+  pledged: number;
+  in_progress: number;
+  completed: number;
+  failed: number;
+}
+
+export interface OrgPledgesStatsResponse {
+  data: OrgPledgesStatsItem[];
 }
