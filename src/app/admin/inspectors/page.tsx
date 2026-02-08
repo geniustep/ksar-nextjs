@@ -31,6 +31,7 @@ export default function AdminInspectorsPage() {
   const [codeCopied, setCodeCopied] = useState(false);
   const [fullInfoCopied, setFullInfoCopied] = useState(false);
   const [copiedInspectorId, setCopiedInspectorId] = useState<string | null>(null);
+  const [visibleCodeIds, setVisibleCodeIds] = useState<Set<string>>(new Set());
 
   // Set code modal
   const [showSetCodeModal, setShowSetCodeModal] = useState(false);
@@ -166,6 +167,18 @@ export default function AdminInspectorsPage() {
     setTimeout(() => setCopiedInspectorId(null), 2000);
   };
 
+  const toggleCodeVisibility = (inspectorId: string) => {
+    setVisibleCodeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(inspectorId)) {
+        next.delete(inspectorId);
+      } else {
+        next.add(inspectorId);
+      }
+      return next;
+    });
+  };
+
   const showInspectorInfo = (inspector: InspectorResponse) => {
     if (!inspector.access_code) return;
     setDisplayCode(inspector.access_code);
@@ -219,11 +232,29 @@ export default function AdminInspectorsPage() {
                     <td className="py-3 px-3">
                       {inspector.access_code ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-xs bg-primary-50 text-primary-700 px-2.5 py-1.5 rounded-lg font-semibold tracking-wider border border-primary-100" dir="ltr">
-                            {inspector.access_code.length > 4
-                              ? `${inspector.access_code.slice(0, 4)}-${inspector.access_code.slice(4)}`
-                              : inspector.access_code}
+                          <span className="font-mono text-xs bg-gray-100 text-gray-700 px-2.5 py-1.5 rounded-lg font-semibold tracking-wider border border-gray-200 select-none" dir="ltr">
+                            {visibleCodeIds.has(inspector.id)
+                              ? (inspector.access_code.length > 4
+                                  ? `${inspector.access_code.slice(0, 4)}-${inspector.access_code.slice(4)}`
+                                  : inspector.access_code)
+                              : '••••-••••'}
                           </span>
+                          <button
+                            onClick={() => toggleCodeVisibility(inspector.id)}
+                            className="text-xs px-1.5 py-1.5 rounded-lg transition-all text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                            title={visibleCodeIds.has(inspector.id) ? 'إخفاء الكود' : 'إظهار الكود'}
+                          >
+                            {visibleCodeIds.has(inspector.id) ? (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            )}
+                          </button>
                           <button
                             onClick={() => copyInspectorCode(inspector)}
                             className={`text-xs px-2 py-1.5 rounded-lg transition-all font-medium ${
