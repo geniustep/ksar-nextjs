@@ -92,7 +92,7 @@ export default function RegisterPage() {
         <div className="bg-accent-50 border border-accent-100 rounded-2xl p-4 text-center mb-6">
           <p className="text-sm text-accent-700 mb-2">هل تريد طريقة أسهل؟</p>
           <Link
-            href="/citizen-auth"
+            href="/citizen/new-request"
             className="text-sm text-accent-700 font-semibold hover:text-accent-800 underline"
           >
             ادخل برقم هاتفك فقط - بدون تسجيل معقد

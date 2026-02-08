@@ -213,7 +213,7 @@ export default function LoginPage() {
             <div>
               <p className="text-sm text-gray-500 mb-1">مواطن يريد تقديم طلب؟</p>
               <Link
-                href="/citizen-auth"
+                href="/citizen/new-request"
                 className="block text-sm text-accent-500 hover:text-accent-600 font-semibold"
               >
                 ادخل برقم هاتفك مباشرة
@@ -241,14 +241,14 @@ export default function LoginPage() {
         </div>
 
         {/* Demo accounts */}
-        <div className="mt-6 bg-primary-50 border border-primary-100 rounded-2xl p-4 text-sm">
+        {/* <div className="mt-6 bg-primary-50 border border-primary-100 rounded-2xl p-4 text-sm">
           <p className="font-medium text-primary-800 mb-2">حسابات تجريبية:</p>
           <div className="space-y-1 text-primary-700">
             <p>المدير: admin@ksar.ma / admin123</p>
             <p>المؤسسة: org@ksar.ma / org123</p>
             <p>المواطن: citizen@example.ma / citizen123</p>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -274,7 +274,7 @@ export default function AboutPage() {
             <div className="flex items-center gap-6 mt-4 text-xs">
               <Link href="/" className="hover:text-white transition-colors">الرئيسية</Link>
               <Link href="/track" className="hover:text-white transition-colors">تتبع طلب</Link>
-              <Link href="/citizen-auth" className="hover:text-white transition-colors">طلب مساعدة</Link>
+              <Link href="/citizen/new-request" className="hover:text-white transition-colors">طلب مساعدة</Link>
             </div>
             <div className="border-t border-gray-800 mt-8 pt-6 w-full text-center">
               <p className="text-xs text-gray-500">كرامة قصر - منصة إنسانية تحفظ الكرامة قبل المساعدة</p>

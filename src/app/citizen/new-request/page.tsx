@@ -273,8 +273,9 @@ function NewRequestContent() {
         is_urgent: data.is_urgent,
       });
       
-      // Clear the pending request data on success
+      // Clear the pending request data and auth state on success (security)
       sessionStorage.removeItem(PENDING_REQUEST_KEY);
+      localStorage.removeItem('access_token');
       
       setSuccess({
         tracking_code: result.tracking_code,
@@ -484,7 +485,7 @@ function NewRequestContent() {
         full_name: undefined, // Optional
       });
 
-      // Step 2: Save the token
+      // Step 2: Save the token temporarily (needed for API call)
       localStorage.setItem('access_token', registerResult.access_token);
 
       // Step 3: Submit the request
@@ -504,6 +505,10 @@ function NewRequestContent() {
         longitude: form.longitude ?? undefined,
         is_urgent: form.is_urgent,
       });
+
+      // Step 4: Clear token immediately after submission (security - prevent session persistence)
+      localStorage.removeItem('access_token');
+      sessionStorage.removeItem(PENDING_REQUEST_KEY);
 
       setSuccess({
         tracking_code: result.tracking_code,
@@ -555,8 +560,9 @@ function NewRequestContent() {
         is_urgent: form.is_urgent,
       });
       
-      // Clear the pending request data on success
+      // Clear the pending request data and auth state on success (security)
       sessionStorage.removeItem(PENDING_REQUEST_KEY);
+      localStorage.removeItem('access_token');
       
       setSuccess({
         tracking_code: result.tracking_code,
@@ -697,16 +703,13 @@ function NewRequestContent() {
 
             <div className="flex flex-col gap-3">
               <Button
-                onClick={() => router.push('/citizen')}
+                variant="secondary"
                 className="w-full text-base py-3"
                 size="lg"
-              >
-                🏠 العودة لطلباتي
-              </Button>
-              <Button
-                variant="secondary"
-                className="w-full"
                 onClick={() => {
+                  // Clear any remaining auth state for security
+                  localStorage.removeItem('access_token');
+                  sessionStorage.removeItem(PENDING_REQUEST_KEY);
                   setSuccess(null);
                   setStep(1);
                   setPhoneNumber('');
@@ -730,44 +733,47 @@ function NewRequestContent() {
               >
                 ➕ تسجيل وضع جديد
               </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  // Clear any remaining auth state for security
+                  localStorage.removeItem('access_token');
+                  sessionStorage.removeItem(PENDING_REQUEST_KEY);
+                  router.push('/');
+                }}
+              >
+                🏠 العودة للرئيسية
+              </Button>
             </div>
           </div>
         </div>
       </div>
     );
 
-    // If user just registered (step 6), show success without DashboardLayout
-    if (step === 6) {
-      return (
-        <div className="min-h-screen bg-neutral-light">
-          {/* Simple header for new users */}
-          <div className="bg-gradient-to-bl from-primary-600 via-primary-700 to-primary-950 py-6 px-4">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex items-center gap-3">
-                <Image
-                  src="/logo.png"
-                  alt="كرامة قصر"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                />
-                <div>
-                  <h1 className="text-xl font-bold text-white">كرامة قصر</h1>
-                  <p className="text-primary-200 text-xs">KKSAR.MA</p>
-                </div>
+    // Always show success without DashboardLayout (token is cleared for security)
+    return (
+      <div className="min-h-screen bg-neutral-light">
+        {/* Simple header */}
+        <div className="bg-gradient-to-bl from-primary-600 via-primary-700 to-primary-950 py-6 px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/logo.png"
+                alt="كرامة قصر"
+                width={40}
+                height={40}
+                className="object-contain"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-white">كرامة قصر</h1>
+                <p className="text-primary-200 text-xs">KKSAR.MA</p>
               </div>
             </div>
           </div>
-          {successContent}
         </div>
-      );
-    }
-
-    // For authenticated users, use DashboardLayout
-    return (
-      <DashboardLayout>
         {successContent}
-      </DashboardLayout>
+      </div>
     );
   }
 

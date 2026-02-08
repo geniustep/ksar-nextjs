@@ -161,7 +161,7 @@ export default function TrackPage() {
             ليس لديك رمز متابعة؟
           </p>
           <Link
-            href="/citizen-auth"
+            href="/citizen/new-request"
             className="inline-block text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
             قدّم طلبًا جديدًا عبر رقم هاتفك
