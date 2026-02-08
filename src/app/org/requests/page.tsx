@@ -148,6 +148,22 @@ export default function OrgRequestsPage() {
                       {req.region && <span>{req.region}</span>}
                       <span>أسرة: {req.family_members}</span>
                       <span>{formatRelativeTime(req.created_at)}</span>
+                      {req.latitude && req.longitude && (
+                        <a
+                          href={`https://www.google.com/maps?q=${req.latitude},${req.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-700 transition-colors"
+                          title="فتح الموقع في خرائط جوجل"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                          </svg>
+                          <span>الموقع</span>
+                        </a>
+                      )}
                     </div>
                   </div>
 

@@ -18,6 +18,8 @@ export default function OrgRegisterPage() {
     region: '',
     description: '',
     preferred_code: '',
+    org_type: '' as 'association' | 'individual' | '',
+    national_id: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,11 @@ export default function OrgRegisterPage() {
     e.preventDefault();
     setError('');
 
+    if (!form.org_type) {
+      setError('يرجى اختيار نوع المؤسسة');
+      return;
+    }
+
     if (!form.name.trim()) {
       setError('يرجى إدخال اسم المؤسسة');
       return;
@@ -41,6 +48,11 @@ export default function OrgRegisterPage() {
     const cleanPhone = form.phone.replace(/\s/g, '');
     if (!cleanPhone || cleanPhone.length < 9) {
       setError('يرجى إدخال رقم هاتف صحيح');
+      return;
+    }
+
+    if (form.org_type === 'individual' && !form.national_id.trim()) {
+      setError('يرجى إدخال رقم البطاقة الوطنية');
       return;
     }
 
@@ -60,6 +72,8 @@ export default function OrgRegisterPage() {
         region: form.region.trim() || undefined,
         description: form.description.trim() || undefined,
         preferred_code: form.preferred_code.trim() || undefined,
+        org_type: form.org_type as 'association' | 'individual',
+        national_id: form.org_type === 'individual' ? form.national_id.trim() : undefined,
       });
       setOrgName(res.organization_name);
       setSuccess(true);
@@ -152,14 +166,78 @@ export default function OrgRegisterPage() {
                   </div>
                 )}
 
+                {/* نوع المؤسسة */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    نوع التسجيل <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, org_type: 'association', national_id: '' })}
+                      className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        form.org_type === 'association'
+                          ? 'border-primary-500 bg-primary-50 shadow-sm'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-2xl">🏢</span>
+                      <span className={`text-sm font-medium ${form.org_type === 'association' ? 'text-primary-700' : 'text-gray-700'}`}>
+                        جمعية / مؤسسة
+                      </span>
+                      {form.org_type === 'association' && (
+                        <div className="absolute top-2 left-2 w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, org_type: 'individual' })}
+                      className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        form.org_type === 'individual'
+                          ? 'border-primary-500 bg-primary-50 shadow-sm'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-2xl">👤</span>
+                      <span className={`text-sm font-medium ${form.org_type === 'individual' ? 'text-primary-700' : 'text-gray-700'}`}>
+                        شخص ذاتي
+                      </span>
+                      {form.org_type === 'individual' && (
+                        <div className="absolute top-2 left-2 w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
                 <Input
-                  label="اسم الجمعية / المبادرة"
+                  label={form.org_type === 'individual' ? 'الاسم الكامل' : 'اسم الجمعية / المبادرة'}
                   name="name"
-                  placeholder="مثال: اسم الجمعية أو الشخص القائم بالمبادرة"
+                  placeholder={form.org_type === 'individual' ? 'الاسم الكامل للشخص' : 'مثال: اسم الجمعية أو الشخص القائم بالمبادرة'}
                   value={form.name}
                   onChange={handleChange}
                   required
                 />
+
+                {/* رقم البطاقة الوطنية - يظهر فقط للشخص الذاتي */}
+                {form.org_type === 'individual' && (
+                  <Input
+                    label="رقم البطاقة الوطنية"
+                    name="national_id"
+                    placeholder="مثال: AB123456"
+                    value={form.national_id}
+                    onChange={handleChange}
+                    required
+                    dir="ltr"
+                  />
+                )}
 
                 <Input
                   label="رقم الهاتف"

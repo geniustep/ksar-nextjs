@@ -226,6 +226,8 @@ export const publicApi = {
     region?: string;
     responsible_name?: string;
     preferred_code?: string;
+    org_type: 'association' | 'individual';
+    national_id?: string;
   }): Promise<{ message: string; organization_name: string }> {
     return request('/api/v1/public/org-register', {
       method: 'POST',
