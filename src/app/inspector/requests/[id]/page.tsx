@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardTitle } from '@/components/ui/Card';
@@ -20,7 +21,7 @@ import {
   ALL_REQUEST_STATUSES,
   ALL_CATEGORIES,
 } from '@/lib/constants';
-import type { InspectorRequestResponse, OrganizationBrief, RequestCategory, RequestStatus, RequestPledgesResponse } from '@/lib/types';
+import type { InspectorRequestResponse, OrganizationBrief, RequestCategory, RequestStatus, RequestPledgesResponse, RequestResponse } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function InspectorRequestDetailPage() {
@@ -37,6 +38,9 @@ export default function InspectorRequestDetailPage() {
   const [success, setSuccess] = useState('');
 
   const [phoneRequestCount, setPhoneRequestCount] = useState<number | null>(null);
+  const [phoneRequests, setPhoneRequests] = useState<RequestResponse[]>([]);
+  const [showPhoneRequests, setShowPhoneRequests] = useState(false);
+  const [phoneRequestsLoading, setPhoneRequestsLoading] = useState(false);
 
   const [pledgesData, setPledgesData] = useState<RequestPledgesResponse | null>(null);
   const [showApproveForm, setShowApproveForm] = useState<string | null>(null);
@@ -119,6 +123,30 @@ export default function InspectorRequestDetailPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadPhoneRequests = async () => {
+    if (!request?.requester_phone) return;
+    setPhoneRequestsLoading(true);
+    try {
+      const res = await inspectorApi.getRequests({
+        search: request.requester_phone,
+        limit: 50,
+      });
+      // Exclude the current request
+      setPhoneRequests(res.items.filter((r) => r.id !== requestId));
+    } catch {
+      // Silently handle
+    } finally {
+      setPhoneRequestsLoading(false);
+    }
+  };
+
+  const togglePhoneRequests = () => {
+    if (!showPhoneRequests && phoneRequests.length === 0) {
+      loadPhoneRequests();
+    }
+    setShowPhoneRequests(!showPhoneRequests);
   };
 
   const openActivateModal = () => {
@@ -405,6 +433,72 @@ export default function InspectorRequestDetailPage() {
           </div>
         ) : null}
       </div>
+
+      {/* Previous requests for same phone */}
+      {phoneRequestCount !== null && phoneRequestCount > 1 && (
+        <div className="mb-4">
+          <button
+            onClick={togglePhoneRequests}
+            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${
+              showPhoneRequests
+                ? 'bg-blue-50 border-blue-200 text-blue-800'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm">📋</span>
+              <span className="text-xs sm:text-sm font-medium">طلبات سابقة لنفس الرقم</span>
+              <Badge className="bg-blue-100 text-blue-700 text-[10px] sm:text-xs">{phoneRequestCount - 1}</Badge>
+            </div>
+            <svg className={`w-4 h-4 transition-transform ${showPhoneRequests ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showPhoneRequests && (
+            <div className="mt-2 space-y-2">
+              {phoneRequestsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Spinner />
+                </div>
+              ) : phoneRequests.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-3">لا توجد طلبات أخرى</p>
+              ) : (
+                phoneRequests.map((r) => (
+                  <Link key={r.id} href={`/inspector/requests/${r.id}`} className="block">
+                    <div className="bg-white rounded-xl border border-gray-100 p-3 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-gray-800">{CATEGORY_LABELS[r.category as RequestCategory] || r.category}</span>
+                            <Badge className={`${REQUEST_STATUS_COLORS[r.status]} text-[10px]`}>{REQUEST_STATUS_LABELS[r.status]}</Badge>
+                            {r.is_urgent === 1 && <Badge className="bg-red-100 text-red-800 text-[10px]">مستعجل</Badge>}
+                          </div>
+                          {r.description && (
+                            <p className="text-[10px] sm:text-xs text-gray-500 truncate">{r.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                            <span>{r.city || '-'}{r.region ? ` - ${r.region}` : ''}</span>
+                            <span className="text-gray-300">|</span>
+                            <span>{new Date(r.created_at).toLocaleDateString('ar-MA')}</span>
+                            {r.priority_score > 0 && (
+                              <>
+                                <span className="text-gray-300">|</span>
+                                <span className="text-primary-600">أولوية: {r.priority_score}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-gray-300 text-xs mr-2">&larr;</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main content */}
