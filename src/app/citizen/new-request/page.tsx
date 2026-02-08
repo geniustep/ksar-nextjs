@@ -176,6 +176,7 @@ function NewRequestContent() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   const [autoSubmitting, setAutoSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -792,8 +793,8 @@ function NewRequestContent() {
       case 5:
         return true;
       case 6:
-        // Phone number required for guest registration
-        return phoneNumber.length >= 10;
+        // Phone number required for guest registration + terms accepted
+        return phoneNumber.length >= 10 && acceptedTerms;
       default:
         return false;
     }
@@ -1525,6 +1526,23 @@ function NewRequestContent() {
                   <p className="text-xs text-gray-500 mt-2 text-center">
                     أدخل رقم هاتفك بدون رمز الدولة أو مع رمز الدولة (+212)
                   </p>
+                </div>
+
+                {/* Terms of use checkbox */}
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mt-4">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-2 cursor-pointer"
+                      />
+                    </div>
+                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">
+                      أوافق على وضع اسمي الشخصي ورقم هاتفي وأية بيانات أخرى ضرورية، رهن إشارة المنصة، لاستعمالها من أجل الأغراض التي أُنشئت من أجلها.
+                    </span>
+                  </label>
                 </div>
 
                 {error && (

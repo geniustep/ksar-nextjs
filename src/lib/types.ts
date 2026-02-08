@@ -25,6 +25,11 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface UnifiedLoginRequest {
+  identifier: string;
+  password: string;
+}
+
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -507,6 +512,37 @@ export interface OrgAccessRequest {
 
 export interface OrgAccessResponse {
   message: string;
+}
+
+// === Admin Management (Superadmin) ===
+
+export interface AdminListItem {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  status: string;
+  created_at: string;
+  last_login: string | null;
+}
+
+export interface AdminListResponse {
+  items: AdminListItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface AdminCreateRequest {
+  full_name: string;
+  email: string;
+  password: string;
+  phone?: string;
+}
+
+export interface AdminCreatedResponse {
+  message: string;
+  admin: AdminListItem;
 }
 
 // === Citizens Management ===

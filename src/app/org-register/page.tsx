@@ -22,6 +22,7 @@ export default function OrgRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orgName, setOrgName] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -39,6 +40,11 @@ export default function OrgRegisterPage() {
     const cleanPhone = form.phone.replace(/\s/g, '');
     if (!cleanPhone || cleanPhone.length < 9) {
       setError('يرجى إدخال رقم هاتف صحيح');
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError('يرجى الموافقة على شروط الاستخدام للمتابعة');
       return;
     }
 
@@ -208,7 +214,51 @@ export default function OrgRegisterPage() {
                   rows={4}
                 />
 
-                <Button type="submit" className="w-full" loading={loading}>
+                {/* Terms of use */}
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                    </svg>
+                    التزامات المنصة
+                  </h4>
+                  <div className="text-sm text-gray-600 leading-relaxed space-y-2 mb-4 pr-1">
+                    <p>تلتزم منصة كرامة قصر والجمعيات والمبادرات المساهمة بـ:</p>
+                    <ul className="space-y-1.5 text-gray-600">
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary-500 mt-1 flex-shrink-0">-</span>
+                        <span>الحفاظ على المعطيات الشخصية للأفراد والجمعيات ومختلف المتدخلين.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary-500 mt-1 flex-shrink-0">-</span>
+                        <span>استغلال المعطيات الشخصية، فقط للأغراض التي أُنشئت من أجلها المنصة.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary-500 mt-1 flex-shrink-0">-</span>
+                        <span>عدم إعطائها لأية جهة غير الجهة المتدخلة.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary-500 mt-1 flex-shrink-0">-</span>
+                        <span>سيتم التخلص من كل المعطيات المدونة من طرف المستفيدين والمتدخلين، فور الانتهاء من عمل المنصة.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <label className="flex items-start gap-3 cursor-pointer group border-t border-gray-200 pt-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-2 cursor-pointer"
+                      />
+                    </div>
+                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors font-medium">
+                      أوافق على الالتزام بالشروط المذكورة أعلاه
+                    </span>
+                  </label>
+                </div>
+
+                <Button type="submit" className="w-full" loading={loading} disabled={!acceptedTerms}>
                   تسجيل المؤسسة
                 </Button>
               </form>

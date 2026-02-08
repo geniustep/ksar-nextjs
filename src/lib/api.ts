@@ -1,4 +1,5 @@
 import type {
+  UnifiedLoginRequest,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
@@ -55,6 +56,9 @@ import type {
   OrgAccessRequest,
   OrgAccessResponse,
   CitizenListItem,
+  AdminListResponse,
+  AdminCreatedResponse,
+  AdminCreateRequest,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ksar.geniura.com';
@@ -116,6 +120,13 @@ async function request<T>(
 export const authApi = {
   login(data: LoginRequest): Promise<LoginResponse> {
     return request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  unifiedLogin(data: UnifiedLoginRequest): Promise<LoginResponse> {
+    return request('/api/v1/auth/unified-login', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -482,6 +493,44 @@ export const adminApi = {
 
   deleteCitizen(citizenId: string): Promise<{ message: string }> {
     return request(`/api/v1/admin/citizens/${citizenId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // === Admin Management (Superadmin only) ===
+
+  getAdmins(params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<AdminListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    return request(`/api/v1/admin/admins${qs ? '?' + qs : ''}`);
+  },
+
+  createAdmin(data: AdminCreateRequest): Promise<AdminCreatedResponse> {
+    const params = new URLSearchParams();
+    params.set('full_name', data.full_name);
+    params.set('email', data.email);
+    params.set('password', data.password);
+    if (data.phone) params.set('phone', data.phone);
+    return request(`/api/v1/admin/admins?${params.toString()}`, {
+      method: 'POST',
+    });
+  },
+
+  updateAdminStatus(adminId: string, status: string): Promise<{ message: string }> {
+    return request(`/api/v1/admin/admins/${adminId}/status?status=${status}`, {
+      method: 'PATCH',
+    });
+  },
+
+  deleteAdmin(adminId: string): Promise<{ message: string }> {
+    return request(`/api/v1/admin/admins/${adminId}`, {
       method: 'DELETE',
     });
   },

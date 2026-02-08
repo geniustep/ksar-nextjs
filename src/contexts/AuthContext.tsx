@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { UserResponse, LoginRequest, RegisterRequest, OtpVerifyResponse, InspectorLoginResponse, OrganizationLoginResponse } from '@/lib/types';
+import type { UserResponse, LoginRequest, UnifiedLoginRequest, RegisterRequest, OtpVerifyResponse, InspectorLoginResponse, OrganizationLoginResponse } from '@/lib/types';
 import { authApi, ApiError } from '@/lib/api';
 
 interface AuthState {
@@ -12,6 +12,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (data: LoginRequest) => Promise<void>;
+  unifiedLogin: (data: UnifiedLoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   loginWithOtp: (otpResponse: OtpVerifyResponse) => void;
   loginAsInspector: (response: InspectorLoginResponse) => void;
@@ -54,6 +55,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (data: LoginRequest) => {
     const res = await authApi.login(data);
+    localStorage.setItem('access_token', res.access_token);
+    setState({
+      user: res.user,
+      isLoading: false,
+      isAuthenticated: true,
+    });
+  };
+
+  const unifiedLogin = async (data: UnifiedLoginRequest) => {
+    const res = await authApi.unifiedLogin(data);
     localStorage.setItem('access_token', res.access_token);
     setState({
       user: res.user,
@@ -105,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, loginWithOtp, loginAsInspector, loginAsOrganization, logout, refreshUser }}>
+    <AuthContext.Provider value={{ ...state, login, unifiedLogin, register, loginWithOtp, loginAsInspector, loginAsOrganization, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

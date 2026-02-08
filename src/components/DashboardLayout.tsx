@@ -22,6 +22,11 @@ const adminNav: NavItem[] = [
   { label: 'المواطنون', href: '/admin/citizens', icon: '👥' },
 ];
 
+const superadminNav: NavItem[] = [
+  ...adminNav,
+  { label: 'المشرفون', href: '/admin/admins', icon: '🛡️' },
+];
+
 const orgNav: NavItem[] = [
   { label: 'الطلبات المتاحة', href: '/org/requests', icon: '📋' },
   { label: 'تكفلاتي', href: '/org/assignments', icon: '✅' },
@@ -62,9 +67,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   switch (user.role) {
     case 'superadmin':
+      navItems = superadminNav;
+      title = 'لوحة المدير العام';
+      break;
     case 'admin':
       navItems = adminNav;
-      title = user.role === 'superadmin' ? 'لوحة المدير العام' : 'لوحة الإدارة';
+      title = 'لوحة الإدارة';
       break;
     case 'inspector':
       navItems = inspectorNav;

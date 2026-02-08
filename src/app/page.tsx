@@ -84,18 +84,34 @@ export default function HomePage() {
           <p className="text-base text-primary-200 mb-10 max-w-xl mx-auto animate-fade-in-up-delay-2">
             جسر إنساني محترم بين من يحتاج ومن يُعين، بسرّية وكرامة تامة
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up-delay-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up-delay-3">
             <Link
               href="/citizen/new-request"
-              className="px-8 py-3.5 bg-white text-primary-700 rounded-xl font-semibold hover:bg-gray-50 transition-all w-full sm:w-auto text-center shadow-lg hover:shadow-xl"
+              className="group inline-flex items-center justify-center gap-3 px-7 sm:px-9 py-4 bg-white text-primary-700 rounded-2xl font-bold text-base sm:text-lg hover:bg-gray-50 transition-all w-full sm:w-auto shadow-lg hover:shadow-2xl hover:scale-[1.02]"
             >
-              الإبلاغ عن وضع إنساني
+              <span className="flex items-center justify-center w-10 h-10 bg-primary-50 rounded-xl group-hover:bg-primary-100 transition-colors flex-shrink-0">
+                <svg className="w-6 h-6 text-primary-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                </svg>
+              </span>
+              <span>الإبلاغ عن وضع إنساني</span>
+              <svg className="w-5 h-5 flex-shrink-0 opacity-60 group-hover:translate-x-[-4px] transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
             </Link>
             <Link
               href="/org"
-              className="px-8 py-3.5 border-2 border-white/30 text-white rounded-xl font-semibold hover:bg-white/10 transition-all w-full sm:w-auto text-center backdrop-blur-sm"
+              className="group inline-flex items-center justify-center gap-3 px-7 sm:px-9 py-4 border-2 border-white/30 text-white rounded-2xl font-bold text-base sm:text-lg hover:bg-white/10 transition-all w-full sm:w-auto backdrop-blur-sm hover:border-white/50 hover:scale-[1.02]"
             >
-              المواكبة الإنسانية
+              <span className="flex items-center justify-center w-10 h-10 bg-white/10 rounded-xl group-hover:bg-white/20 transition-colors flex-shrink-0">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z" />
+                </svg>
+              </span>
+              <span>فضاء الجمعيات والمبادرات</span>
+              <svg className="w-5 h-5 flex-shrink-0 opacity-60 group-hover:translate-x-[-4px] transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
             </Link>
           </div>
         </div>

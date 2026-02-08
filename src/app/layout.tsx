@@ -5,6 +5,10 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'كرامة قصر | لأن الظرف لا يُسقط الكرامة',
   description: 'منصة إنسانية تحفظ الكرامة قبل المساعدة - جسر بين المحتاجين والجهات الخيرية المعتمدة',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
